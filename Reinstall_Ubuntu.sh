@@ -9,7 +9,7 @@
 # if I wanted to. This requires that the installation uses apt.
 # ------------------------------------------------------------------------------
 
-version_num="0.04"
+version_num="0.05"
 dash_line_len=80
 current_path=$(pwd)
 user_name=$(echo "$USER")
@@ -19,6 +19,10 @@ home_path="/home/$user_name/"
 # 0 is false, while 1 is true
 is_desktop=1
 is_server=0
+
+# Set the gcc_version
+GCC_VERSION="11"
+CLANG_VERSION="10"
 
 function echo_wait(){
     echo "$1"
@@ -78,7 +82,7 @@ function appearance_tools(){
 function brave_browser(){
     echo_wait "Now installing Brave Browser."
     sudo apt install apt-transport-https curl -y
-
+    
     curl -s https://brave-browser-apt-release.s3.brave.com/brave-core.asc | sudo apt-key --keyring /etc/apt/trusted.gpg.d/brave-browser-release.gpg add -
 
     echo "deb [arch=amd64] https://brave-browser-apt-release.s3.brave.com/ stable main" | sudo tee /etc/apt/sources.list.d/brave-browser-release.list
@@ -86,7 +90,16 @@ function brave_browser(){
     sudo apt update && sudo apt install brave-browser -y
 }
 
+function install_text_editors() {
+    # Neovim
+    sudo apt install neovim -y
+    install_emacs
+
+}     
+
 function install_emacs(){
+    EMACS_VERSION="27"
+    
     echo "Would you like me to compile emacs on your system? [y/n] "
     read -r -n1 user_input
     if [[ $user_input == "y" ]];
@@ -97,28 +110,24 @@ function install_emacs(){
 	git clone https://git.savannah.gnu.org/git/emacs.git
 	
     else
-	echo "Then would you like me to install emacs27 at all? [y/n] "
+	echo "Then would you like me to install emacs${EMACS_VERSION} at all? [y/n] "
 	read -r -n1 user_input
 
 	if [[ $user_input == "y" ]];
 	   then       
-	       echo "Alright then, I'll just setup the repository and install Emacs 27."
+	       echo "Alright then, I'll just setup the repository and install Emacs ${EMACS_VERSION}."
 	       sudo add-apt-repository ppa:kelleyk/emacs -y
-	       sudo apt install emacs27 -y	       
+	       sudo apt install "emacs${EMACS_VERSION}" -y
 	else
 	    echo "Do you plan on installing Emacs on this machine in any way? [y/n] "
 	    read -r -n1 user_input
 
+
 	    if [[ $user_input == "y" ]];
 	    then
 		echo_wait "Alright. If you've already compiled emacs or plan to use a debian file made by checkinstall, I'll set everything up."
-		sudo apt install libjansson-dev libgccjit-10-dev
 		echo_wait "Also, I'll installing some stuff for lsp-mode since you use emacs for C/C++ Development."
-		sudo apt install libclang-dev clangd-10 -y
-		sudo apt install libwebkit2gtk-4.0-dev -y    
-		sudo apt install mailutils -y
-		sudo apt install opus-tools -y
-		echo_wait "It's done. Stay Frosty."
+		install_emacs_dependencies		
 		return
 		
 	    else
@@ -129,38 +138,91 @@ function install_emacs(){
     fi
 
     echo_wait "Next, I'll install some additional packages needed for Emacs."
-    sudo apt install libjansson-dev libgccjit-10-dev -y
-    echo_wait "Also, I'll installing some stuff for lsp-mode since you use emacs for C/C++ Development."
-    sudo apt install libclang-dev clangd-10 -y
-    sudo apt install libwebkit2gtk-4.0-dev -y    
-    sudo apt install mailutils -y
-    sudo apt install opus-tools -y
+    install_emacs_dependencies
     
 }
 
+function install_emacs_dependencies() {
+    sudo apt install libjansson-dev "libgccjit-${GCC_VERSION}-dev" -y
+    sudo apt install libclang-dev clangd-"${CLANG_VERSION}" -y
+    sudo apt install libwebkit2gtk-4.0-dev -y    
+    sudo apt install mailutils -y
+    sudo apt install opus-tools -y
+
+}    
+
 function programming_tools(){
     echo_wait "Now installing some Programming libraries and tools."
+    # Java
     sudo apt install openjdk-8-jdk openjdk-11-jdk -y
-    sudo apt install neovim -y
-    sudo apt install ipython3 python3-pip -y
-    sudo apt install python3-venv -y
     
+    # Text Editors
+    install_text_editors
+
+    # Python
+    python_tools
+    
+    # C/C++
+    cpp_tools
+
+    # PHP
+    php_tools
+    
+    # Rust 
+    sudo apt install racket -y
+    sudo apt install curl -y
+
+    # Static Analyzer for bash
+    sudo apt install shellcheck -y
+}
+
+function cpp_tools() {    
     sudo add-apt-repository ppa:ubuntu-toolchain-r/test -y
-    sudo apt install g++-10 gcc-10 -y
+    sudo apt install "g++-${GCC_VERSION}" "gcc-${GCC_VERSION}" -y
     
     sudo apt install valgrind -y
     sudo apt install cppman -y
     sudo apt install libboost-dev -y
-    sudo apt install racket -y
-    sudo apt install curl -y
     sudo apt install cmake -y
 
     # For Doxygen:
     sudo apt install doxygen-* -y
     sudo apt install graphviz -y
 
-    # Static Analyzer for bash
-    sudo apt install shellcheck -y
+
+    # Clone and build googletest.
+    mkdir -p "$download_path"
+    cd "$download_path"    
+    git clone https://github.com/google/googletest.git
+    cmake .
+    make
+
+    # I would recommend using checkinstall manually to install this,
+    # but you can also just do sudo make install at your peril.
+    # sudo make install
+
+    # Now return
+    cd "$current_path"    
+}
+
+function php_tools() {
+    sudo apt install php-dev -y
+    sudo apt install php-mysql -y
+
+}    
+
+function python_tools() {
+    sudo apt install ipython3 python3-pip -y
+    sudo apt install python3-venv -y
+
+    # Establish python lsp server
+    python3 -m pip install --user python-lsp-server
+
+    # Symlink pylsp to pyls in order for lsp-mode to locate it.
+    # You may need to change this in the future.
+    ln -s ~/.local/bin/pylsp ~/.local/bin/pyls
+
+    
 }
 
 function more_tools(){
@@ -203,13 +265,12 @@ function manual_debians(){
     # VNC server
     wget https://www.realvnc.com/download/file/vnc.files/VNC-Server-6.7.2-Linux-x64.deb
 
-    # Yacreader
-    # wget https://download.opensuse.org/repositories/home:/selmf/xUbuntu_18.04/amd64/yacreader_9.7.1.2009123-1_amd64.deb
-
-    git clone https://github.com/google/googletest.git
-
+    # TODO: Install Yaccreader using wget
+    
+    # Now attempt to install each debian file:
+    yes | sudo dpkg -Ri .
+    
     cd "$current_path" || (echo "Could not enter $current_path. Exiting." && exit)
-
 }    
 
 function vidya(){
@@ -262,7 +323,6 @@ function desktop_installation(){
     vidya
     snap_ides
     snap_applications
-    install_emacs
     manual_debians
 }
 
@@ -277,7 +337,6 @@ function laptop_installation(){
     vidya
     snap_ides
     snap_applications
-    install_emacs
     manual_debians
 }
 
@@ -285,7 +344,6 @@ function server_installation() {
     essential_programs
     programming_tools
     appearance_tools
-    install_emacs
     snap_applications
 }    
 
