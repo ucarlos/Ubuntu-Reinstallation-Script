@@ -23,6 +23,7 @@ is_server=0
 # Set the gcc_version
 GCC_VERSION="11"
 CLANG_VERSION="10"
+EMACS_VERSION="27"
 
 function echo_wait(){
     echo "$1"
@@ -56,7 +57,9 @@ function essential_programs(){
     sudo apt install texlive-latex-base texlive-latex-extra -y
     sudo apt install texlive-latex-recommended -y
     sudo apt install ttf-mscorefonts-installer -y
-    sudo apt install openssh-server -y    
+    sudo apt install openssh-server -y
+    sudo apt install usb-creator-gtk -y
+    sudo apt install checkinstall -y
 }    
 
 function appearance_tools(){
@@ -98,7 +101,7 @@ function install_text_editors() {
 }     
 
 function install_emacs(){
-    EMACS_VERSION="27"
+
     
     echo "Would you like me to compile emacs on your system? [y/n] "
     read -r -n1 user_input
@@ -114,7 +117,7 @@ function install_emacs(){
 	read -r -n1 user_input
 
 	if [[ $user_input == "y" ]];
-	   then       
+	   then
 	       echo "Alright then, I'll just setup the repository and install Emacs ${EMACS_VERSION}."
 	       sudo add-apt-repository ppa:kelleyk/emacs -y
 	       sudo apt install "emacs${EMACS_VERSION}" -y
@@ -123,17 +126,16 @@ function install_emacs(){
 	    read -r -n1 user_input
 
 
-	    if [[ $user_input == "y" ]];
+	    if [[ "$user_input" == "y" ]];
 	    then
 		echo_wait "Alright. If you've already compiled emacs or plan to use a debian file made by checkinstall, I'll set everything up."
 		echo_wait "Also, I'll installing some stuff for lsp-mode since you use emacs for C/C++ Development."
-		install_emacs_dependencies		
+		install_emacs_dependencies
 		return
-		
 	    else
 		echo_wait "Moving on..."
 		return
-	    fi	    			       
+	    fi
 	fi
     fi
 
@@ -167,6 +169,9 @@ function programming_tools(){
 
     # PHP
     php_tools
+
+    # NPM for language servers:
+    sudo apt install npm -y
     
     # Rust 
     sudo apt install racket -y
@@ -202,7 +207,7 @@ function cpp_tools() {
     # sudo make install
 
     # Now return
-    cd "$current_path"    
+    cd "$current_path" || (echo "Some error occurred in cpp_tools." && exit 1)
 }
 
 function php_tools() {
@@ -221,7 +226,6 @@ function python_tools() {
     # Symlink pylsp to pyls in order for lsp-mode to locate it.
     # You may need to change this in the future.
     ln -s ~/.local/bin/pylsp ~/.local/bin/pyls
-
     
 }
 
@@ -235,7 +239,7 @@ function more_tools(){
 
     sudo apt install hexchat filezilla -y
     sudo apt install gnome-disks -y
-    sudo apt-get install pavucontrol spek -y    
+    sudo apt-get install pavucontrol spek -y  
 
     if (( is_desktop == 1 ));
     then
@@ -294,7 +298,7 @@ function vidya(){
 }
 
 # Handles installing IDEs through snap.
-function snap_ides(){
+function snap_ides() {
     echo_wait "Now installing snap programs..."
     sudo snap install clion --classic
     sudo snap install pycharm-community --classic
@@ -401,10 +405,9 @@ function print_menu(){
 	exit
     fi
     
-
-    echo_wait "Complete! Now make sure to swap CTRL and CAPSLOCK using GNOME tweaks or use the method below."
-    
+    echo_wait "Complete! Now make sure to swap CTRL and CAPSLOCK using GNOME tweaks or use the method below."    
     print_dashed_line
+    
     echo '
 
     Open the following for editing:
@@ -421,7 +424,6 @@ function print_menu(){
 
     /usr/bin/setxkbmap -option "ctrl:swapcaps"'
     print_dashed_line
-
 }
 
 
