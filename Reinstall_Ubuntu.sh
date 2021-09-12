@@ -229,6 +229,21 @@ function python_tools() {
     
 }
 
+function install_fcron() {
+    cd "$download_path"
+    
+    echo_wait "Installing fcron dependencies first..."
+    sudo apt install git autoconf docbook docbook-xsl docbook-xml docbook-utils manpages-dev -y
+
+    
+    # Download the tarball
+    wget "http://fcron.free.fr/archives/fcron-3.3.0.src.tar.gz"
+    tar -xvf "fcron-3.3.0.src.tar.gz"
+
+    # Now install the damn thing
+    cd "fcron-3.3.0" && ./configure && make && sudo make install         
+}    
+
 function more_tools(){
     echo_wait "Installing some more tools..."
     sudo apt install kdenlive -y
@@ -328,6 +343,7 @@ function desktop_installation(){
     snap_ides
     snap_applications
     manual_debians
+    install_fcron
 }
 
 
@@ -342,13 +358,16 @@ function laptop_installation(){
     snap_ides
     snap_applications
     manual_debians
+    install_fcron
 }
 
 function server_installation() {
     essential_programs
     programming_tools
     appearance_tools
+    install_fcron
     snap_applications
+
 }    
 
 # Check if the OS is a Debian derived Linux distribution using python's platform module.
