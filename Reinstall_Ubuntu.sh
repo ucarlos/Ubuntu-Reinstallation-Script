@@ -24,6 +24,7 @@ is_server=0
 GCC_VERSION="11"
 CLANG_VERSION="10"
 EMACS_VERSION="27"
+PHP_VERSION="7.4"
 
 function echo_wait(){
     echo "$1"
@@ -211,8 +212,9 @@ function cpp_tools() {
 }
 
 function php_tools() {
-    sudo apt install php-dev -y
-    sudo apt install php-mysql -y
+    
+    sudo apt install "php${PHP_VERSION}-dev" -y
+    sudo apt install "php${PHP_VERSION}-*" -y
 
 }    
 
@@ -431,7 +433,7 @@ function print_menu(){
 
     Open the following for editing:
 
-    sudo vi /etc/default/keyboard
+    sudo nano /etc/default/keyboard
 
     And edit XKBOPTIONS="ctrl:swapcaps"
 
