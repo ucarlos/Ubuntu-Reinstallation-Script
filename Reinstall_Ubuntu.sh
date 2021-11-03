@@ -22,7 +22,7 @@ is_server=0
 
 # Set the gcc_version
 GCC_VERSION="11"
-CLANG_VERSION="10"
+CLANG_VERSION="12"
 EMACS_VERSION="27"
 PHP_VERSION="7.4"
 
@@ -61,6 +61,8 @@ function essential_programs(){
     sudo apt install openssh-server -y
     sudo apt install usb-creator-gtk -y
     sudo apt install checkinstall -y
+    sudo apt install qbitorrent -y
+    
 }    
 
 function appearance_tools(){
@@ -157,7 +159,7 @@ function install_emacs_dependencies() {
 function programming_tools(){
     echo_wait "Now installing some Programming libraries and tools."
     # Java
-    sudo apt install openjdk-8-jdk openjdk-11-jdk -y
+    java_tools
     
     # Text Editors
     install_text_editors
@@ -180,12 +182,25 @@ function programming_tools(){
 
     # Static Analyzer for bash
     sudo apt install shellcheck -y
+
+    # tldr for manpages:
+    pip3 install tldr
+}
+
+function java_tools() {
+    JAVA_VERSION_LIST=('8' '11')
+
+    for i in "${JAVA_VERSION_LIST[@]}"
+    do
+	sudo apt install "openjdk-${i}-jdk" -y
+    done
+
 }
 
 function cpp_tools() {    
     sudo add-apt-repository ppa:ubuntu-toolchain-r/test -y
     sudo apt install "g++-${GCC_VERSION}" "gcc-${GCC_VERSION}" -y
-    
+    sudo apt install "clang-${CLANG_VERSION}"    
     sudo apt install valgrind -y
     sudo apt install cppman -y
     sudo apt install libboost-dev -y
