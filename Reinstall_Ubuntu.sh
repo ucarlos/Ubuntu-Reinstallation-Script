@@ -16,15 +16,23 @@ user_name=$(echo "$USER")
 download_path="/home/$user_name/Downloads/"
 home_path="/home/$user_name/"
 
+# ------------------------------------------------------------------------------
+# Global Variables
+# ------------------------------------------------------------------------------
+
 # 0 is false, while 1 is true
 is_desktop=1
 is_server=0
 
-# Set the gcc_version
 GCC_VERSION="11"
 CLANG_VERSION="12"
 EMACS_VERSION="27"
 PHP_VERSION="7.4"
+JAVA_VERSION_LIST=('8' '11')
+
+# ------------------------------------------------------------------------------
+# Functions
+# ------------------------------------------------------------------------------
 
 function echo_wait(){
     echo "$1"
@@ -188,7 +196,7 @@ function programming_tools(){
 }
 
 function java_tools() {
-    JAVA_VERSION_LIST=('8' '11')
+
 
     for i in "${JAVA_VERSION_LIST[@]}"
     do
@@ -462,6 +470,7 @@ function print_menu(){
     print_dashed_line
 }
 
-
+# ------------------------------------------------------------------------------
 # Now run the script:
+# ------------------------------------------------------------------------------
 check_debian_distribution
