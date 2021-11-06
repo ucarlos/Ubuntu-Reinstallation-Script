@@ -1,0 +1,11 @@
+#+title: Ubuntu Reinstallation Script
+#+author: Ulysses Carlos
+#+date: <2021-11-06 Sat>
+
+A Bash script that handles installing various necessary programs whenever I have to reinstall Ubuntu for some reason.
+This script handles installation of essential programs, programming tools, web browsers, and snap applications.
+
+* Requirements
++ Bash
++ A working Internet Connection
++ Python2.7+ or Python3.5+ in order to run the OS check.
