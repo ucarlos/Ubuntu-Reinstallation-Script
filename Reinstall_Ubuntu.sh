@@ -29,6 +29,7 @@ CLANG_VERSION="12"
 EMACS_VERSION="27"
 PHP_VERSION="7.4"
 JAVA_VERSION_LIST=('8' '11')
+DOT_NET_VERSION="5.0"
 
 # ------------------------------------------------------------------------------
 # Functions
@@ -181,6 +182,9 @@ function programming_tools(){
     # PHP
     php_tools
 
+    # C#
+    csharp_tools
+    
     # NPM for language servers:
     sudo apt install npm -y
     
@@ -239,7 +243,24 @@ function php_tools() {
     sudo apt install "php${PHP_VERSION}-dev" -y
     sudo apt install "php${PHP_VERSION}-*" -y
 
-}    
+}
+
+
+function csharp_tools() {
+    # First, cd to ~/:
+    cd "$home_path" || (echo "Some error occurred in csharp_tools." && exit 1)
+  
+    # Install the packing signing key.
+    wget https://packages.microsoft.com/config/ubuntu/20.04/packages-microsoft-prod.deb -O packages-microsoft-prod.deb
+    sudo dpkg -i packages-microsoft-prod.deb
+    rm packages-microsoft-prod.deb
+
+    # Now install the SDK:
+    # sudo apt update
+    sudo apt install apt-transport-https -y
+    sudo apt install "dotnet-sdk-${DOT_NET_VERSION}" -y    
+
+}
 
 function python_tools() {
     sudo apt install ipython3 python3-pip -y
@@ -352,12 +373,18 @@ function snap_ides() {
 
 # Handles applications that can run through the command line.
 function snap_applications() {
-    sudo snap install dotnet-sdk --classic
-    sudo snap alias dotnet-sdk.dotnet dotnet
+    echo "Skipping Snap Applications..."
+}
+
+function update_first() {
+    sudo apt update
+    sudo apt upgrade -y
 }
 
 function desktop_installation(){
     echo "Desktop Installation"
+    update_first
+    
     graphic_drivers
     essential_programs
     appearance_tools
@@ -374,6 +401,8 @@ function desktop_installation(){
 
 function laptop_installation(){
     echo "Laptop Installation"
+    update_first
+    
     essential_programs
     appearance_tools
     programming_tools
@@ -387,6 +416,7 @@ function laptop_installation(){
 }
 
 function server_installation() {
+    update_first
     essential_programs
     programming_tools
     appearance_tools
@@ -431,7 +461,8 @@ function print_menu(){
     # Lowercase input:
     user_input=$(echo "$user_input" | awk '{print tolower($0)}')
     echo ""
-    
+
+       
     if [ "$user_input" == "a" ];
     then
 	desktop_installation
