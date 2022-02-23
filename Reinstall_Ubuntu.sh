@@ -9,26 +9,29 @@
 # if I wanted to. This requires that the installation uses apt.
 # ------------------------------------------------------------------------------
 
-version_num="0.05"
+
+# ------------------------------------------------------------------------------
+# Global Variables
+# ------------------------------------------------------------------------------
+
+version_num="2022-02-22"
 dash_line_len=80
 current_path=$(pwd)
 user_name=$(echo "$USER")
 download_path="/home/$user_name/Downloads/"
 home_path="/home/$user_name/"
 
-# ------------------------------------------------------------------------------
-# Global Variables
-# ------------------------------------------------------------------------------
-
 # 0 is false, while 1 is true
 is_desktop=1
 is_server=0
 
+
 GCC_VERSION="11"
 CLANG_VERSION="12"
 EMACS_VERSION="27"
-PHP_VERSION="7.4"
-JAVA_VERSION_LIST=('8' '11')
+PHP_VERSION="8.1"
+NODE_VERSION="16"
+JAVA_VERSION_LIST=('8' '11' '16')
 DOT_NET_VERSION="5.0"
 
 # ------------------------------------------------------------------------------
@@ -69,8 +72,11 @@ function essential_programs(){
     sudo apt install ttf-mscorefonts-installer -y
     sudo apt install openssh-server -y
     sudo apt install usb-creator-gtk -y
+    sudo apt install curl -y
     sudo apt install checkinstall -y
-    sudo apt install qbitorrent -y
+    sudo apt install qbittorrent -y
+    sudo apt install bleachbit -y
+    sudo apt install cryptsetup -y
     
 }    
 
@@ -134,26 +140,15 @@ function install_emacs(){
 	       sudo add-apt-repository ppa:kelleyk/emacs -y
 	       sudo apt install "emacs${EMACS_VERSION}" -y
 	else
+            
+	    echo_wait "Alright. If you've already compiled emacs or plan to use a debian file made by checkinstall, I'll set everything up."
+	    echo_wait "Also, I'll installing some stuff for lsp-mode since you use emacs for C/C++ Development."
+            install_emacs_dependencies          
 	    echo "Do you plan on installing Emacs on this machine in any way? [y/n] "
 	    read -r -n1 user_input
 
-
-	    if [[ "$user_input" == "y" ]];
-	    then
-		echo_wait "Alright. If you've already compiled emacs or plan to use a debian file made by checkinstall, I'll set everything up."
-		echo_wait "Also, I'll installing some stuff for lsp-mode since you use emacs for C/C++ Development."
-		install_emacs_dependencies
-		return
-	    else
-		echo_wait "Moving on..."
-		return
-	    fi
 	fi
-    fi
-
-    echo_wait "Next, I'll install some additional packages needed for Emacs."
-    install_emacs_dependencies
-    
+    fi    
 }
 
 function install_emacs_dependencies() {
@@ -170,9 +165,6 @@ function programming_tools(){
     # Java
     java_tools
     
-    # Text Editors
-    install_text_editors
-
     # Python
     python_tools
     
@@ -186,22 +178,32 @@ function programming_tools(){
     csharp_tools
     
     # NPM for language servers:
-    sudo apt install npm -y
+    javascript_tools
     
-    # Rust 
+    # Racket
     sudo apt install racket -y
-    sudo apt install curl -y
 
     # Static Analyzer for bash
     sudo apt install shellcheck -y
 
     # tldr for manpages:
     pip3 install tldr
+
+    # Text Editors
+    install_text_editors    
+}
+
+function javascript_tools() {
+    # For more information, go to
+    # https://github.com/nodesource/distributions/blob/master/README.md    
+    
+    curl -sL "https://deb.nodesource.com/setup_${NODE_VERSION}.x -o nodesource_setup.sh"
+    sudo apt update
+    sudo apt install nodejs -y
+
 }
 
 function java_tools() {
-
-
     for i in "${JAVA_VERSION_LIST[@]}"
     do
 	sudo apt install "openjdk-${i}-jdk" -y
@@ -209,7 +211,7 @@ function java_tools() {
 
 }
 
-function cpp_tools() {    
+function cpp_tools {    
     sudo add-apt-repository ppa:ubuntu-toolchain-r/test -y
     sudo apt install "g++-${GCC_VERSION}" "gcc-${GCC_VERSION}" -y
     sudo apt install "clang-${CLANG_VERSION}"    
@@ -239,6 +241,14 @@ function cpp_tools() {
 }
 
 function php_tools() {
+    # Repo for PHP:
+    sudo apt install software-properties-common -y
+    sudo add-apt-repository ppa:ondrej/php -y
+
+    # If using apache, do this:
+    # sudo apt update
+    # sudo apt install php8.0 libapache2-mod-php8.0
+    # For more information, go to https://linuxize.com/post/how-to-install-php-8-on-ubuntu-20-04/
     
     sudo apt install "php${PHP_VERSION}-dev" -y
     sudo apt install "php${PHP_VERSION}-*" -y
