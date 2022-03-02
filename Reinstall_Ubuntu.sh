@@ -32,7 +32,7 @@ EMACS_VERSION="27"
 PHP_VERSION="8.1"
 NODE_VERSION="16"
 JAVA_VERSION_LIST=('8' '11' '16')
-DOT_NET_VERSION="5.0"
+DOT_NET_VERSION="6.0"
 
 # ------------------------------------------------------------------------------
 # Functions
@@ -143,10 +143,7 @@ function install_emacs(){
             
 	    echo_wait "Alright. If you've already compiled emacs or plan to use a debian file made by checkinstall, I'll set everything up."
 	    echo_wait "Also, I'll installing some stuff for lsp-mode since you use emacs for C/C++ Development."
-            install_emacs_dependencies          
-	    echo "Do you plan on installing Emacs on this machine in any way? [y/n] "
-	    read -r -n1 user_input
-
+            install_emacs_dependencies
 	fi
     fi    
 }
@@ -377,6 +374,7 @@ function snap_ides() {
     sudo snap install android-studio --classic
     sudo snap install intellij-idea-ultimate --classic
     sudo snap install rider --classic
+    sudo snap install bitwarden
 
 
 }    
