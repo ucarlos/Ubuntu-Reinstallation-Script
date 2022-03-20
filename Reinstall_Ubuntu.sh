@@ -14,16 +14,17 @@
 # Global Variables
 # ------------------------------------------------------------------------------
 
-version_num="2022-02-22"
+version_num="2022-03-20"
 dash_line_len=80
 current_path=$(pwd)
 user_name=$(echo "$USER")
 download_path="/home/$user_name/Downloads/"
+temp_download_path="/tmp/Downloads"
 home_path="/home/$user_name/"
 
 # 0 is false, while 1 is true
-is_desktop=1
-is_server=0
+IS_DESKTOP=1
+IS_SERVER=0
 
 
 GCC_VERSION="11"
@@ -59,11 +60,14 @@ function graphic_drivers(){
 
 function essential_programs(){
     echo_wait "Installing some Essential Programs."
-    if (( is_server != 1 ));
+    if (( IS_SERVER != 1 ));
        then
-	    sudo apt install deja-dup duplicity htop mpv git -y
+	   sudo apt install deja-dup duplicity mpv -y
+           sudo apt install gnome-disks -y
+           sudo apt install hexchat filezilla -y
     fi
     
+    sudo apt install htop git -y
     sudo apt install tmux gedit net-tools -y
     sudo apt install fdupes -y
     sudo apt install neofetch screenfetch -y
@@ -77,11 +81,16 @@ function essential_programs(){
     sudo apt install qbittorrent -y
     sudo apt install bleachbit -y
     sudo apt install cryptsetup -y
+
+
+
+    echo_wait "Installing Calibre Library..."
+    sudo -v && wget -nv -O- https://download.calibre-ebook.com/linux-installer.sh | sudo sh /dev/stdin    
     
 }    
 
 function appearance_tools(){
-    if (( is_desktop == 1 ));
+    if (( IS_DESKTOP == 1 ));
     then
 	sudo apt install lightdm gnome-tweaks gnome-shell-extensions -y
 	sudo apt install chome-gnome-shell -y
@@ -91,7 +100,7 @@ function appearance_tools(){
     
     sudo apt install fonts-firacode -y
 
-    if (( is_server != 1 ));
+    if (( IS_SERVER != 1 ));
     then
 	sudo add-apt-repository -u ppa:snwh/ppa -y
 	sudo apt install paper-icon-theme arc-theme -y
@@ -118,44 +127,94 @@ function install_text_editors() {
 
 }     
 
-function install_emacs(){
-
+function install_emacs_debian() {
+    mkdir -p "$temp_download_path" && cd "$temp_download_path"
+    download_link="https://drive.google.com/file/d/1DyGv2iW-cfZZFdDfNCzxu_8qhntJoNqz/view?usp=sharing"
+    file_name="emacs29_29.0.5-1_native-comp_amd64-2021-10-31.deb"
     
-    echo "Would you like me to compile emacs on your system? [y/n] "
-    read -r -n1 user_input
-    if [[ $user_input == "y" ]];
+    return_code=$(wget "$download_link")
+    if [[ "$return_code" != 0 ]]
     then
-	echo_wait "I'll just clone the repository in $download_path. It's up to you to install the appropriate libraries."
-	cd "$download_path" || (echo "Could not enter $download_path. Exiting." && exit)
-	(mkdir "Emacs" && cd "Emacs)") || (echo "Could not change into directory. Exiting." && exit 1)
-	git clone https://git.savannah.gnu.org/git/emacs.git
-	
+        echo "Cannot download Emacs Debian. Aborting."
+        return
     else
-	echo "Then would you like me to install emacs${EMACS_VERSION} at all? [y/n] "
-	read -r -n1 user_input
+        sudo apt install "$temp_download_path/$file_name" -y
+        echo "Complete!"
+    fi
 
-	if [[ $user_input == "y" ]];
-	   then
-	       echo "Alright then, I'll just setup the repository and install Emacs ${EMACS_VERSION}."
-	       sudo add-apt-repository ppa:kelleyk/emacs -y
-	       sudo apt install "emacs${EMACS_VERSION}" -y
-	else
-            
-	    echo_wait "Alright. If you've already compiled emacs or plan to use a debian file made by checkinstall, I'll set everything up."
-	    echo_wait "Also, I'll installing some stuff for lsp-mode since you use emacs for C/C++ Development."
-            install_emacs_dependencies
-	fi
-    fi    
-}
+    # Now return
+    cd "$current_path"
+}    
 
 function install_emacs_dependencies() {
     sudo apt install libjansson-dev "libgccjit-${GCC_VERSION}-dev" -y
     sudo apt install libclang-dev clangd-"${CLANG_VERSION}" -y
-    sudo apt install libwebkit2gtk-4.0-dev -y    
+    sudo apt install libwebkit2gtk-4.0-dev -y
+    sudo apt install libjpeg-dev libtiff-dev libncurses-dev texinfo libxpm-dev -y
     sudo apt install mailutils -y
     sudo apt install opus-tools -y
 
-}    
+}
+
+function compile_emacs_from_source() {
+    mkdir -p "$temp_download_path"
+    cd "$temp_download_path"
+
+    mkdir -p "$temp_download_path/EMACS" && cd "$temp_download_path/EMACS"
+
+    git clone https://git.savannah.gnu.org/git/emacs.git
+    
+    mkdir -p "build" && cd "build"
+
+    # Call autogen:
+    ../emacs/autogen.sh
+
+    # Now call configure here:
+    ../emacs/configure --with-mailutils --with-json --with-native-compilation --with-x --with-xwidgets
+
+
+    # Now make it
+    (make -j4 && sudo make install) || (echo "Could not make emacs. Aborting.")
+
+    # Now return to the original path
+    cd "$current_path"
+   
+}
+function install_emacs(){
+    echo "First installing Dependencies."
+    install_emacs_dependencies
+
+
+    read -r -n2 -p "Do you want me to install emacs through a personal debian file? [y/n]" user_input
+    if [[ $user_input =~ [yY] ]]
+    then
+        install_emacs_debian
+    else
+        read -r -n2 -p "How about installing emacs through a repository? [y/n]" user_input
+        
+        if [[ $user_input =~ [yY] ]]
+        then
+            echo "Alright then, I'll just setup the repository and install Emacs ${EMACS_VERSION}."
+	    sudo add-apt-repository ppa:kelleyk/emacs -y
+	    sudo apt install "emacs${EMACS_VERSION}" -y
+        else
+            read -r -n2 -p "How about compiling it from source? [y/n] " user_input
+
+            if [[ $user_input =~ [yY ] ]]
+            then
+                compile_emacs_from_source
+            else
+                echo "Alright, you're on your own then."
+            fi
+            
+        fi
+    fi
+
+    # Now return back to current_path just in case:
+    cd "$current_path"
+}
+
+    
 
 function programming_tools(){
     echo_wait "Now installing some Programming libraries and tools."
@@ -208,6 +267,25 @@ function java_tools() {
 
 }
 
+function install_googletest() {
+    
+    mkdir -p "$temp_download_path"
+    cd "$temp_download_path"
+    
+    # Clone and build googletest.
+    git clone https://github.com/google/googletest.git
+    cmake .
+    make
+
+    # I would recommend using checkinstall manually to install this,
+    # but you can also just do sudo make install at your peril.
+    sudo make install
+
+    # Now return
+    cd "$current_path"
+
+}    
+
 function cpp_tools {    
     sudo add-apt-repository ppa:ubuntu-toolchain-r/test -y
     sudo apt install "g++-${GCC_VERSION}" "gcc-${GCC_VERSION}" -y
@@ -221,20 +299,7 @@ function cpp_tools {
     sudo apt install doxygen-* -y
     sudo apt install graphviz -y
 
-
-    # Clone and build googletest.
-    mkdir -p "$download_path"
-    cd "$download_path"    
-    git clone https://github.com/google/googletest.git
-    cmake .
-    make
-
-    # I would recommend using checkinstall manually to install this,
-    # but you can also just do sudo make install at your peril.
-    # sudo make install
-
-    # Now return
-    cd "$current_path" || (echo "Some error occurred in cpp_tools." && exit 1)
+    install_googletest
 }
 
 function php_tools() {
@@ -283,7 +348,7 @@ function python_tools() {
 }
 
 function install_fcron() {
-    cd "$download_path"
+    cd "$temp_download_path"
     
     echo_wait "Installing fcron dependencies first..."
     sudo apt install git autoconf docbook docbook-xsl docbook-xml docbook-utils manpages-dev -y
@@ -294,10 +359,14 @@ function install_fcron() {
     tar -xvf "fcron-3.3.0.src.tar.gz"
 
     # Now install the damn thing
-    cd "fcron-3.3.0" && ./configure && make && sudo make install         
+    cd "fcron-3.3.0" && ./configure && make && sudo make install
+
+    # Now return:
+    cd "$current_path"
+    
 }    
 
-function more_tools(){
+function audiovisual_tools(){
     echo_wait "Installing some more tools..."
     sudo apt install kdenlive -y
     sudo apt install audacity -y
@@ -305,19 +374,15 @@ function more_tools(){
     sudo apt install gimp -y
     sudo apt install easytag -y
 
-    sudo apt install hexchat filezilla -y
-    sudo apt install gnome-disks -y
+
     sudo apt-get install pavucontrol spek -y  
 
-    if (( is_desktop == 1 ));
+    if (( IS_DESKTOP == 1 ));
     then
 	sudo add-apt-repository ppa:obsproject/obs-studio -y
 	sudo apt-get install obs-studio -y	
     fi
 
-
-    echo_wait "Installing Calibre Library..."
-    sudo -v && wget -nv -O- https://download.calibre-ebook.com/linux-installer.sh | sudo sh /dev/stdin    
     
 }    
 
@@ -325,9 +390,9 @@ function manual_debians(){
     echo_wait "Now downloading and installing some .deb files that have to be installed manually."
     
     # Create the download path if it exists.
-    mkdir -p "$download_path"
+    mkdir -p "$temp_download_path"
     
-    cd "$download_path" || (echo "Could not enter $download_path. Exiting." && exit)
+    cd "$temp_download_path" || (echo "Could not enter $temp_download_path. Exiting." && exit)
 
     # VNC Client
     wget https://www.realvnc.com/download/file/viewer.files/VNC-Viewer-6.20.529-Linux-x64.deb
@@ -337,7 +402,6 @@ function manual_debians(){
     # VNC server
     wget https://www.realvnc.com/download/file/vnc.files/VNC-Server-6.7.2-Linux-x64.deb
 
-    # TODO: Install Yaccreader using wget
     
     # Now attempt to install each debian file:
     yes | sudo dpkg -Ri .
@@ -347,7 +411,7 @@ function manual_debians(){
 
 function vidya(){
     echo_wait "Now installing Steam and some emulators!"
-    if (( is_desktop == 1 ));
+    if (( IS_DESKTOP == 1 ));
     then	
 	sudo apt install steam dolphin-emu -y
 	
@@ -397,7 +461,7 @@ function desktop_installation(){
     essential_programs
     appearance_tools
     programming_tools
-    more_tools
+    audiovisual_tools
     brave_browser
     vidya
     snap_ides
@@ -414,7 +478,7 @@ function laptop_installation(){
     essential_programs
     appearance_tools
     programming_tools
-    more_tools
+    audiovisual_tools
     brave_browser
     vidya
     snap_ides
@@ -476,12 +540,12 @@ function print_menu(){
 	desktop_installation
     elif [ "$user_input" == "b" ];
     then
-	is_desktop=0
+	IS_DESKTOP=0
 	laptop_installation
     elif [[ "$user_input" == "c" ]];
     then
-	is_desktop=0
-	is_server=1
+	IS_DESKTOP=0
+	IS_SERVER=1
 	server_installation
     else
 	echo "Exiting..."
