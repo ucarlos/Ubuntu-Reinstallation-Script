@@ -33,6 +33,7 @@ EMACS_VERSION="27"
 PHP_VERSION="8.1"
 NODE_VERSION="16"
 JAVA_VERSION_LIST=('8' '11' '16')
+POSTGRES_VERSION="12"
 DOT_NET_VERSION="6.0"
 
 # ------------------------------------------------------------------------------
@@ -200,7 +201,7 @@ function install_emacs(){
         else
             read -r -n2 -p "How about compiling it from source? [y/n] " user_input
 
-            if [[ $user_input =~ [yY ] ]]
+            if [[ $user_input =~ [yY] ]]
             then
                 compile_emacs_from_source
             else
@@ -246,7 +247,9 @@ function programming_tools(){
     pip3 install tldr
 
     # Text Editors
-    install_text_editors    
+    install_text_editors
+
+    sql_tools
 }
 
 function javascript_tools() {
@@ -314,6 +317,21 @@ function php_tools() {
     
     sudo apt install "php${PHP_VERSION}-dev" -y
     sudo apt install "php${PHP_VERSION}-*" -y
+
+}
+
+function sql_tools() {
+
+    sudo apt install mariadb-server -y
+    sudo apt install "postgresql-${POSTGRES_VERSION}" -y
+    sudo apt install pgadmin3 -y
+
+    # Now install mysql workbench:
+    mkdir -p "$temp_download_path" && cd "$temp_download_path"
+    wget "https://dev.mysql.com/get/mysql-apt-config_0.8.22-1_all.deb"
+    sudo dpkg -i "mysql-apt-config_0.8.22-1_all.deb"
+    sudo apt update
+    sudo apt install mysql-workbench-community -y
 
 }
 
@@ -507,6 +525,31 @@ function check_debian_distribution() {
 
 }
 
+function swap_caps_lock_and_ctrl() {
+    echo_wait "Now Swapping Caps Lock and Control by modifying /etc/default/keyboard..."
+
+    if [[ -f "/etc/default/keyboard" ]];
+    then
+        # Is there even a XKBOPTIONS line? If not, just append it.
+        grep_check=$(grep "XKBOPTIONS" "/etc/default/keyboard")
+        if [[ -z "$grep_check" ]];
+        then
+            sudo echo 'XKBOPTIONS="ctrl:swapcaps"' >> /etc/default/keyboard
+        else       
+            # Otherwise, replace an empty XKBOPTIONS line with the ctrl:swapcaps option.
+            sudo sed -i 's/XKBOPTIONS=\"\"/XKBOPTIONS=\"ctrl:swapcaps\"/g' /etc/default/keyboard
+        fi        
+    else
+        echo "Hmm... /etc/default/keyboard doesn't seem to exist on your system."
+        echo "You may either create the file yourself and add XKBOPTIONS=\"ctrl:swapcaps\" to it"
+        echo "Or try to run the following alternatives:"
+        printf "\tsudo dpkg-reconfigure keyboard-configuration\n"
+        printf "\t/usr/bin/setxkbmap -option \"ctrl:swapcaps\"\n"
+    fi
+    
+
+}
+
 function print_menu(){
     echo "The Current Time is $(date +'%m/%d/%Y %H:%M')"    
     print_dashed_line
@@ -552,25 +595,7 @@ function print_menu(){
 	exit
     fi
     
-    echo_wait "Complete! Now make sure to swap CTRL and CAPSLOCK using GNOME tweaks or use the method below."    
-    print_dashed_line
-    
-    echo '
-
-    Open the following for editing:
-
-    sudo nano /etc/default/keyboard
-
-    And edit XKBOPTIONS="ctrl:swapcaps"
-
-    Then, reconfigure:
-
-    sudo dpkg-reconfigure keyboard-configuration
-
-    or
-
-    /usr/bin/setxkbmap -option "ctrl:swapcaps"'
-    print_dashed_line
+    swap_caps_lock_and_ctrl
 }
 
 # ------------------------------------------------------------------------------
