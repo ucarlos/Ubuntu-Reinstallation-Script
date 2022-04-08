@@ -96,16 +96,19 @@ function install_fcon() {
 
 function install_emacs_debian() {
     mkdir -p "$temp_download_path" && cd "$temp_download_path"
-    download_link="https://drive.google.com/file/d/1SksczkGyCqkxMQQjhq5GyFY48D2jSTI_/view?usp=sharing"
+    download_link="https://drive.google.com/uc?id=1SksczkGyCqkxMQQjhq5GyFY48D2jSTI_&export=download"
     file_name="emacs29_29.0.5-1_native-comp_armhf.deb"
     
-    return_code=$(wget "$download_link")
-    if [[ "$return_code" != 0 ]]
+    gdown "$download_link"
+
+    
+    if [[ ! -f "$file_name" ]]
     then
         echo "Cannot download Emacs Debian. Aborting."
         return
     else
-        sudo apt install "$temp_download_path/$file_name" -y
+        sudo dpkg -i "$temp_download_path/$file_name"
+        sudo apt install --fix-broken
         echo "Complete!"
     fi
 }

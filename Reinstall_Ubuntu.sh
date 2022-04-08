@@ -130,16 +130,20 @@ function install_text_editors() {
 
 function install_emacs_debian() {
     mkdir -p "$temp_download_path" && cd "$temp_download_path"
-    download_link="https://drive.google.com/file/d/1DyGv2iW-cfZZFdDfNCzxu_8qhntJoNqz/view?usp=sharing"
+    download_link="https://drive.google.com/uc?id=1DyGv2iW-cfZZFdDfNCzxu_8qhntJoNqz"
     file_name="emacs29_29.0.5-1_native-comp_amd64-2021-10-31.deb"
+
+
+    gdown "$download_link"
+
     
-    return_code=$(wget "$download_link")
-    if [[ "$return_code" != 0 ]]
+    if [[ ! -f "$file_name" ]]
     then
         echo "Cannot download Emacs Debian. Aborting."
         return
     else
-        sudo apt install "$temp_download_path/$file_name" -y
+        sudo dpkg -i "$temp_download_path/$file_name"
+        sudo apt install --fix-broken
         echo "Complete!"
     fi
 
@@ -362,6 +366,10 @@ function python_tools() {
     # Symlink pylsp to pyls in order for lsp-mode to locate it.
     # You may need to change this in the future.
     ln -s ~/.local/bin/pylsp ~/.local/bin/pyls
+
+    # Install some pip packages:
+
+    python3 -m pip install gdown
     
 }
 
@@ -379,6 +387,9 @@ function install_fcron() {
     # Now install the damn thing
     cd "fcron-3.3.0" && ./configure && make && sudo make install
 
+    # Now enable it:
+    sudo systemctl enable fcron
+    
     # Now return:
     cd "$current_path"
     
