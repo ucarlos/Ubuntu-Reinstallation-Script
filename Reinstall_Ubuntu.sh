@@ -18,7 +18,6 @@ version_num="2022-03-20"
 dash_line_len=80
 current_path=$(pwd)
 user_name=$(echo "$USER")
-download_path="/home/$user_name/Downloads/"
 temp_download_path="/tmp/Downloads"
 home_path="/home/$user_name/"
 
@@ -83,7 +82,7 @@ function essential_programs(){
     sudo apt install bleachbit -y
     sudo apt install cryptsetup -y
 
-
+    sudo apt install p7zip-full unrar -y
 
     echo_wait "Installing Calibre Library..."
     sudo -v && wget -nv -O- https://download.calibre-ebook.com/linux-installer.sh | sudo sh /dev/stdin    
@@ -260,7 +259,7 @@ function javascript_tools() {
     # For more information, go to
     # https://github.com/nodesource/distributions/blob/master/README.md    
     
-    curl -sL "https://deb.nodesource.com/setup_${NODE_VERSION}.x -o nodesource_setup.sh"
+    curl -sL "https://deb.nodesource.com/setup_${NODE_VERSION}.x" -o nodesource_setup.sh
     sudo apt update
     sudo apt install nodejs -y
 
@@ -296,7 +295,7 @@ function install_googletest() {
 function cpp_tools {    
     sudo add-apt-repository ppa:ubuntu-toolchain-r/test -y
     sudo apt install "g++-${GCC_VERSION}" "gcc-${GCC_VERSION}" -y
-    sudo apt install "clang-${CLANG_VERSION}"    
+    sudo apt install "clang-${CLANG_VERSION}" -y
     sudo apt install valgrind -y
     sudo apt install cppman -y
     sudo apt install libboost-dev -y
@@ -528,11 +527,11 @@ function server_installation() {
 
 # Check if the OS is a Debian derived Linux distribution using python's platform module.
 # Will exit if the machine fails the check.
-function check_debian_distribution() {
+function check_ubuntu_distribution() {
     # Use grep to search for Ubuntu or Debian in the output of distro or platform.
-    (python3 -m distro | grep -io -e "ubuntu" -e "debian" >/dev/null && print_menu) ||
-	(python -m platform | grep -io -e "ubuntu" -e "debian" > /dev/null && print_menu) ||
-	(echo "This shell script will only work on a Debian or Ubuntu Distribution." && exit 1)
+    (python3 -m distro | grep -io -e "ubuntu"  >/dev/null && print_menu) ||
+	(python -m platform | grep -io -e "ubuntu" > /dev/null && print_menu) ||
+	(echo "This shell script will only work on a Ubuntu Distribution." && exit 1)
 
 }
 
@@ -612,4 +611,4 @@ function print_menu(){
 # ------------------------------------------------------------------------------
 # Now run the script:
 # ------------------------------------------------------------------------------
-check_debian_distribution
+check_ubuntu_distribution
