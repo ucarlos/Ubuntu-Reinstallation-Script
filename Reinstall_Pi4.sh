@@ -71,7 +71,8 @@ function essential_programs() {
     sudo apt install -y transmission
     sudo apt install -y qbittorrent
     sudo apt install -y checkinstall
-    sudo apt install -y texinfo libncurses-dev 
+    sudo apt install -y texinfo libncurses-dev
+    sudo apt install p7zip-full unrar -y
 
 }
 
@@ -99,7 +100,7 @@ function install_emacs_debian() {
     download_link="https://drive.google.com/uc?id=1SksczkGyCqkxMQQjhq5GyFY48D2jSTI_&export=download"
     file_name="emacs29_29.0.5-1_native-comp_armhf.deb"
     
-    gdown "$download_link"
+    "$home_path/.local/bin/gdown" "$download_link"
 
     
     if [[ ! -f "$file_name" ]]
