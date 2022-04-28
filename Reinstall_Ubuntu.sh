@@ -63,7 +63,7 @@ function essential_programs(){
     if (( IS_SERVER != 1 ));
        then
 	   sudo apt install deja-dup duplicity mpv -y
-           sudo apt install gnome-disks -y
+           sudo apt install gnome-disk-utility -y
            sudo apt install hexchat filezilla -y
     fi
     
@@ -81,8 +81,9 @@ function essential_programs(){
     sudo apt install qbittorrent -y
     sudo apt install bleachbit -y
     sudo apt install cryptsetup -y
-
     sudo apt install p7zip-full unrar -y
+
+    sudo apt install nmap -y
 
     echo_wait "Installing Calibre Library..."
     sudo -v && wget -nv -O- https://download.calibre-ebook.com/linux-installer.sh | sudo sh /dev/stdin    
@@ -93,7 +94,7 @@ function appearance_tools(){
     if (( IS_DESKTOP == 1 ));
     then
 	sudo apt install lightdm gnome-tweaks gnome-shell-extensions -y
-	sudo apt install chome-gnome-shell -y
+	sudo apt install chrome-gnome-shell -y
 	sudo apt install dconf-editor -y
 
     fi
@@ -121,7 +122,6 @@ function brave_browser(){
 }
 
 function install_text_editors() {
-    # Neovim
     sudo apt install neovim -y
     install_emacs
 
@@ -133,7 +133,7 @@ function install_emacs_debian() {
     file_name="emacs29_29.0.5-1_native-comp_amd64-2021-10-31.deb"
 
 
-    gdown "$download_link"
+    "$home_path/.local/bin/gdown" "$download_link"
 
     
     if [[ ! -f "$file_name" ]]
@@ -222,24 +222,28 @@ function install_emacs(){
 
 function programming_tools(){
     echo_wait "Now installing some Programming libraries and tools."
-    # Java
-    java_tools
-    
-    # Python
-    python_tools
-    
+
     # C/C++
     cpp_tools
 
+    # C#
+    csharp_tools
+
+    # Golang
+    golang-tools
+    
+    # Java
+    java_tools
+
+    # JavaScript
+    javascript_tools
+      
     # PHP
     php_tools
 
-    # C#
-    csharp_tools
-    
-    # NPM for language servers:
-    javascript_tools
-    
+    # Python
+    python_tools
+       
     # Racket
     sudo apt install racket -y
 
@@ -253,6 +257,16 @@ function programming_tools(){
     install_text_editors
 
     sql_tools
+}
+
+function golang-tools() {
+    sudo add-apt-repository ppa:longsleep/golang-backports -y
+    sudo apt update
+    sudo apt install golang-go
+
+    # Install sqls server:
+    go install github.com/lighttiger2505/sqls@latest
+         
 }
 
 function javascript_tools() {
@@ -463,17 +477,20 @@ function snap_ides() {
     sudo snap install clion --classic
     sudo snap install pycharm-community --classic
     sudo snap install code --classic
-    sudo snap install android-studio --classic
+    
+    if (( IS_DESKTOP == 1 ));
+    then
+        sudo snap install android-studio --classic
+    fi
+    
     sudo snap install intellij-idea-ultimate --classic
     sudo snap install rider --classic
-    sudo snap install bitwarden
-
 
 }    
 
 # Handles applications that can run through the command line.
 function snap_applications() {
-    echo "Skipping Snap Applications..."
+    sudo snap install bitwarden
 }
 
 function update_first() {
@@ -525,7 +542,7 @@ function server_installation() {
 
 }    
 
-# Check if the OS is a Debian derived Linux distribution using python's platform module.
+# Check if the OS is a Ubuntu derived Linux distribution using python's platform module.
 # Will exit if the machine fails the check.
 function check_ubuntu_distribution() {
     # Use grep to search for Ubuntu or Debian in the output of distro or platform.
