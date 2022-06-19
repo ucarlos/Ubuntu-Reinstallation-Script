@@ -14,7 +14,7 @@
 # Global Variables
 # ------------------------------------------------------------------------------
 
-version_num="2022-03-20"
+version_num="2022-06-19"
 dash_line_len=80
 current_path=$(pwd)
 user_name=$(echo "$USER")
@@ -82,8 +82,8 @@ function essential_programs(){
     sudo apt install bleachbit -y
     sudo apt install cryptsetup -y
     sudo apt install p7zip-full unrar -y
-
     sudo apt install nmap -y
+    sudo apt install libreoffice -y
 
     echo_wait "Installing Calibre Library..."
     sudo -v && wget -nv -O- https://download.calibre-ebook.com/linux-installer.sh | sudo sh /dev/stdin    
@@ -222,7 +222,6 @@ function install_emacs(){
 
 function programming_tools(){
     echo_wait "Now installing some Programming libraries and tools."
-
     # C/C++
     cpp_tools
 
@@ -262,7 +261,7 @@ function programming_tools(){
 function golang-tools() {
     sudo add-apt-repository ppa:longsleep/golang-backports -y
     sudo apt update
-    sudo apt install golang-go
+    sudo apt install golang-go -y
 
     # Install sqls server:
     go install github.com/lighttiger2505/sqls@latest
@@ -272,9 +271,11 @@ function golang-tools() {
 function javascript_tools() {
     # For more information, go to
     # https://github.com/nodesource/distributions/blob/master/README.md    
-    
+    cd "$temp_download" || (mkdir -p "$temp_download" && cd "$temp_download")
     curl -sL "https://deb.nodesource.com/setup_${NODE_VERSION}.x" -o nodesource_setup.sh
-    sudo apt update
+    chmod +x nodesource_setup.sh
+    sudo ./nodesource_setup.sh
+    
     sudo apt install nodejs -y
 
 }
@@ -312,6 +313,9 @@ function cpp_tools {
     sudo apt install "clang-${CLANG_VERSION}" -y
     sudo apt install valgrind -y
     sudo apt install cppman -y
+
+    cppman --cache-all &
+    
     sudo apt install libboost-dev -y
     sudo apt install cmake -y
 
@@ -370,7 +374,7 @@ function csharp_tools() {
 }
 
 function python_tools() {
-    sudo apt install ipython3 python3-pip -y
+    sudo apt install python3-pip -y
     sudo apt install python3-venv -y
 
     # Establish python lsp server
@@ -383,7 +387,10 @@ function python_tools() {
     # Install some pip packages:
 
     python3 -m pip install gdown
-    
+    python3 -m pip install jupyterlab
+    python3 -m pip install ipython
+    python3 -m pip install numpy
+    python3 -m pip install ipdb    
 }
 
 function install_fcron() {
@@ -394,11 +401,11 @@ function install_fcron() {
 
     
     # Download the tarball
-    wget "http://fcron.free.fr/archives/fcron-3.3.0.src.tar.gz"
-    tar -xvf "fcron-3.3.0.src.tar.gz"
+    wget "http://fcron.free.fr/archives/fcron-3.3.1.src.tar.gz"
+    tar -xvf "fcron-3.3.1.src.tar.gz"
 
     # Now install the damn thing
-    cd "fcron-3.3.0" && ./configure && make && sudo make install
+    cd "fcron-3.3.1" && ./configure && make && sudo make install
 
     # Now enable it:
     sudo systemctl enable fcron
@@ -461,7 +468,7 @@ function vidya(){
     
     sudo add-apt-repository ppa:libretro/stable -y
     sudo apt install libretro-* -y
-    sudo apt install retroarch -y
+    sudo apt install retroarch -y    
 
     echo "Now, I would like to install wine on your system, but each Ubuntu version requires a different repository. Instead, I'll just enable 32-bit architecture and add the repository key."
     sudo dpkg --add-architecture i386
@@ -483,7 +490,7 @@ function snap_ides() {
         sudo snap install android-studio --classic
     fi
     
-    sudo snap install intellij-idea-ultimate --classic
+    sudo snap install intellij-idea-community --classic
     sudo snap install rider --classic
 
 }    
@@ -491,6 +498,7 @@ function snap_ides() {
 # Handles applications that can run through the command line.
 function snap_applications() {
     sudo snap install bitwarden
+    sudo snap install plex-desktop
 }
 
 function update_first() {
