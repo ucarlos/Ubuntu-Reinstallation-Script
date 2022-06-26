@@ -87,7 +87,8 @@ function essential_programs(){
 
     echo_wait "Installing Calibre Library..."
     sudo -v && wget -nv -O- https://download.calibre-ebook.com/linux-installer.sh | sudo sh /dev/stdin    
-    
+
+    install_yacreader
 }    
 
 function appearance_tools(){
@@ -367,7 +368,7 @@ function csharp_tools() {
     rm packages-microsoft-prod.deb
 
     # Now install the SDK:
-    # sudo apt update
+    sudo apt update
     sudo apt install apt-transport-https -y
     sudo apt install "dotnet-sdk-${DOT_NET_VERSION}" -y    
 
@@ -435,6 +436,13 @@ function audiovisual_tools(){
     
 }    
 
+function install_yacreader() {
+    echo 'deb http://download.opensuse.org/repositories/home:/selmf/xUbuntu_20.04/ /' | sudo tee /etc/apt/sources.list.d/home:selmf.list
+    curl -fsSL https://download.opensuse.org/repositories/home:selmf/xUbuntu_20.04/Release.key | gpg --dearmor | sudo tee /etc/apt/trusted.gpg.d/home_selmf.gpg > /dev/null
+    sudo apt update
+    sudo apt install yacreader -y
+}
+
 function manual_debians(){
     echo_wait "Now downloading and installing some .deb files that have to be installed manually."
     
@@ -501,6 +509,27 @@ function snap_applications() {
     sudo snap install plex-desktop
 }
 
+function increase_swap_size() {
+    SWAP_SIZE="8"
+    
+    echo_wait "Temporarily disabling the swap..."
+    sudo swapoff -a
+    
+    echo_wait "Increasing the size of /swapfile to ${SWAP_SIZE}G."
+    sudo fallocate -l "${SWAP_SIZE}G" /swapfile
+    sudo chmod 600 /swapfile
+    
+    echo_wait "Now creating the swap from /swapfile"
+    sudo mkswap /swapfile
+
+    echo "Now adding /swapfile to /etc/fstab"
+    echo '/swapfile none swap sw 0 0' | sudo tee -a /etc/fstab
+    
+    echo_wait "Now Re-enable the swap."
+    sudo swapon -a
+    
+}
+
 function update_first() {
     sudo apt update
     sudo apt upgrade -y
@@ -521,6 +550,7 @@ function desktop_installation(){
     snap_applications
     manual_debians
     install_fcron
+    increase_swap_size
 }
 
 
@@ -538,6 +568,7 @@ function laptop_installation(){
     snap_applications
     manual_debians
     install_fcron
+    increase_swap_size
 }
 
 function server_installation() {
@@ -547,6 +578,7 @@ function server_installation() {
     appearance_tools
     install_fcron
     snap_applications
+    increase_swap_size
 
 }    
 
