@@ -27,12 +27,12 @@ IS_SERVER=0
 
 
 GCC_VERSION="11"
-CLANG_VERSION="12"
+CLANG_VERSION="14"
 EMACS_VERSION="27"
 PHP_VERSION="8.1"
 NODE_VERSION="16"
-JAVA_VERSION_LIST=('8' '11' '16')
-POSTGRES_VERSION="12"
+JAVA_VERSION_LIST=('8' '11' '18')
+POSTGRES_VERSION="14"
 DOT_NET_VERSION="6.0"
 
 # ------------------------------------------------------------------------------
@@ -84,9 +84,12 @@ function essential_programs(){
     sudo apt install p7zip-full unrar -y
     sudo apt install nmap -y
     sudo apt install libreoffice -y
+    sudo apt install baobab eog gnome-system-monitor -y
 
     echo_wait "Installing Calibre Library..."
-    sudo -v && wget -nv -O- https://download.calibre-ebook.com/linux-installer.sh | sudo sh /dev/stdin    
+    sudo -v && wget -nv -o- https://download.calibre-ebook.com/linux-installer.sh | sudo sh /dev/stdin
+
+    install_yacreader
     
 }    
 
@@ -103,7 +106,6 @@ function appearance_tools(){
 
     if (( IS_SERVER != 1 ));
     then
-	sudo add-apt-repository -u ppa:snwh/ppa -y
 	sudo apt install paper-icon-theme arc-theme -y
 	sudo apt install variety -y
     fi
@@ -118,7 +120,8 @@ function brave_browser(){
 
     echo "deb [arch=amd64] https://brave-browser-apt-release.s3.brave.com/ stable main" | sudo tee /etc/apt/sources.list.d/brave-browser-release.list
 
-    sudo apt update && sudo apt install brave-browser -y
+    sudo apt update
+    sudo apt install brave-browser -y
 }
 
 function install_text_editors() {
@@ -184,7 +187,7 @@ function compile_emacs_from_source() {
     cd "$current_path"
    
 }
-function install_emacs(){
+function install_emacs() {
     echo "First installing Dependencies."
     install_emacs_dependencies
 
@@ -220,7 +223,7 @@ function install_emacs(){
 
     
 
-function programming_tools(){
+function programming_tools() {
     echo_wait "Now installing some Programming libraries and tools."
     # C/C++
     cpp_tools
@@ -249,8 +252,6 @@ function programming_tools(){
     # Static Analyzer for bash
     sudo apt install shellcheck -y
 
-    # tldr for manpages:
-    pip3 install tldr
 
     # Text Editors
     install_text_editors
@@ -310,6 +311,11 @@ function install_googletest() {
 function cpp_tools {    
     sudo add-apt-repository ppa:ubuntu-toolchain-r/test -y
     sudo apt install "g++-${GCC_VERSION}" "gcc-${GCC_VERSION}" -y
+
+    # In order to allow clangd to work, you have to add the most recent corresponding
+    # libstdc++ version. Otherwise, you'll get strange errors like
+    # iostream header not found or whatever. If 
+    sudo apt install "libstdc++-${GCC_VERSION}-dev" -y
     sudo apt install "clang-${CLANG_VERSION}" -y
     sudo apt install valgrind -y
     sudo apt install cppman -y
@@ -348,18 +354,13 @@ function sql_tools() {
     sudo apt install pgadmin3 -y
 
     # Now install mysql workbench:
-    mkdir -p "$temp_download_path" && cd "$temp_download_path"
-    wget "https://dev.mysql.com/get/mysql-apt-config_0.8.22-1_all.deb"
-    sudo dpkg -i "mysql-apt-config_0.8.22-1_all.deb"
-    sudo apt update
-    sudo apt install mysql-workbench-community -y
-
+    sudo snap install mysql-workbench-community
 }
 
 
 function csharp_tools() {
     # First, cd to ~/:
-    cd "$home_path" || (echo "Some error occurred in csharp_tools." && exit 1)
+    cd "$temp_download_path" || (echo "Some error occurred in csharp_tools." && exit 1)
   
     # Install the packing signing key.
     wget https://packages.microsoft.com/config/ubuntu/20.04/packages-microsoft-prod.deb -O packages-microsoft-prod.deb
@@ -367,9 +368,11 @@ function csharp_tools() {
     rm packages-microsoft-prod.deb
 
     # Now install the SDK:
-    # sudo apt update
+    sudo apt update
     sudo apt install apt-transport-https -y
-    sudo apt install "dotnet-sdk-${DOT_NET_VERSION}" -y    
+    sudo apt install "dotnet-sdk-${DOT_NET_VERSION}" -y
+
+    cd "$home_path"
 
 }
 
@@ -390,7 +393,9 @@ function python_tools() {
     python3 -m pip install jupyterlab
     python3 -m pip install ipython
     python3 -m pip install numpy
-    python3 -m pip install ipdb    
+    python3 -m pip install ipdb
+    python3 -m pip install tldr
+
 }
 
 function install_fcron() {
@@ -415,7 +420,7 @@ function install_fcron() {
     
 }    
 
-function audiovisual_tools(){
+function audiovisual_tools() {
     echo_wait "Installing some more tools..."
     sudo apt install kdenlive -y
     sudo apt install audacity -y
@@ -433,9 +438,16 @@ function audiovisual_tools(){
     fi
 
     
-}    
+}
 
-function manual_debians(){
+function install_yacreader() {
+    echo 'deb http://download.opensuse.org/repositories/home:/selmf/xUbuntu_22.04/ /' | sudo tee /etc/apt/sources.list.d/home:selmf.list
+    curl -fsSL https://download.opensuse.org/repositories/home:selmf/xUbuntu_22.04/Release.key | gpg --dearmor | sudo tee /etc/apt/trusted.gpg.d/home_selmf.gpg > /dev/null
+    sudo apt update
+    sudo apt install yacreader -y
+}
+
+function manual_debians() {
     echo_wait "Now downloading and installing some .deb files that have to be installed manually."
     
     # Create the download path if it exists.
@@ -451,18 +463,25 @@ function manual_debians(){
     # VNC server
     wget https://www.realvnc.com/download/file/vnc.files/VNC-Server-6.7.2-Linux-x64.deb
 
-    
+
+    # Strawberry
+    wget https://files.strawberrymusicplayer.org/strawberry_1.0.5-jammy_amd64.deb
+        
     # Now attempt to install each debian file:
     yes | sudo dpkg -Ri .
     
     cd "$current_path" || (echo "Could not enter $current_path. Exiting." && exit)
 }    
 
-function vidya(){
+function vidya() {
     echo_wait "Now installing Steam and some emulators!"
     if (( IS_DESKTOP == 1 ));
     then	
 	sudo apt install steam dolphin-emu -y
+        
+        sudo add-apt-repository ppa:pcsx2-team/pcsx2-daily -y
+        sudo apt update
+        sudo apt install pcsx2-unstable -y
 	
     fi
     
@@ -499,14 +518,39 @@ function snap_ides() {
 function snap_applications() {
     sudo snap install bitwarden
     sudo snap install plex-desktop
+    sudo snap install spotify
+
 }
+
+
+function increase_swap_size() {
+    SWAP_SIZE="8"
+    
+    echo_wait "Temporarily disabling the swap..."
+    sudo swapoff -a
+    
+    echo_wait "Increasing the size of /swapfile to ${SWAP_SIZE}G."
+    sudo fallocate -l "${SWAP_SIZE}G" /swapfile
+    sudo chmod 600 /swapfile
+    
+    echo_wait "Now creating the swap from /swapfile"
+    sudo mkswap /swapfile
+
+    echo "Now adding /swapfile to /etc/fstab"
+    echo '/swapfile none swap sw 0 0' | sudo tee -a /etc/fstab
+    
+    echo_wait "Now Re-enable the swap."
+    sudo swapon -a
+    
+}
+
 
 function update_first() {
     sudo apt update
     sudo apt upgrade -y
 }
 
-function desktop_installation(){
+function desktop_installation() {
     echo "Desktop Installation"
     update_first
     
@@ -521,10 +565,11 @@ function desktop_installation(){
     snap_applications
     manual_debians
     install_fcron
+    increase_swap_size
 }
 
 
-function laptop_installation(){
+function laptop_installation() {
     echo "Laptop Installation"
     update_first
     
@@ -538,6 +583,7 @@ function laptop_installation(){
     snap_applications
     manual_debians
     install_fcron
+    increase_swap_size
 }
 
 function server_installation() {
@@ -547,6 +593,7 @@ function server_installation() {
     appearance_tools
     install_fcron
     snap_applications
+    increase_swap_size
 
 }    
 
@@ -585,7 +632,7 @@ function swap_caps_lock_and_ctrl() {
 
 }
 
-function print_menu(){
+function print_menu() {
     echo "The Current Time is $(date +'%m/%d/%Y %H:%M')"    
     print_dashed_line
     echo "Ubuntu Reinstallation (Version $version_num)"
