@@ -14,10 +14,10 @@
 # Global Variables
 # ------------------------------------------------------------------------------
 
-version_num="2022-06-19"
+version_num="2022-08-14"
 dash_line_len=80
 current_path=$(pwd)
-user_name=$(echo "$USER")
+user_name="$USER"
 temp_download_path="/tmp/Downloads"
 home_path="/home/$user_name/"
 
@@ -36,15 +36,15 @@ POSTGRES_VERSION="14"
 DOT_NET_VERSION="6.0"
 
 # ------------------------------------------------------------------------------
-# Functions
+# Essential Helper Functions
 # ------------------------------------------------------------------------------
 
-function echo_wait(){
+function echo_wait() {
     echo "$1"
     sleep 1
 }
 
-function print_dashed_line(){
+function print_dashed_line() {
     for ((i = 1; i <= dash_line_len; i++));
     do
 	printf "-"
@@ -53,12 +53,27 @@ function print_dashed_line(){
     
 }
 
-function graphic_drivers(){
+function cd_or_exit() {
+    cd "$1" || (echo "Error: Could not change directory to $1. Aborting." && exit 1)
+}    
+
+
+
+
+# ------------------------------------------------------------------------------
+# Drivers
+# ------------------------------------------------------------------------------
+
+function graphic_drivers() {
     echo_wait "Installing Graphic Drivers."
     sudo ubuntu-drivers autoinstall
 }
 
-function essential_programs(){
+
+# ------------------------------------------------------------------------------
+# Essential Programs
+# ------------------------------------------------------------------------------
+function essential_programs() {
     echo_wait "Installing some Essential Programs."
     if (( IS_SERVER != 1 ));
        then
@@ -84,7 +99,12 @@ function essential_programs(){
     sudo apt install p7zip-full unrar -y
     sudo apt install nmap -y
     sudo apt install libreoffice -y
+    sudo apt install thunderbird -y
     sudo apt install baobab eog gnome-system-monitor -y
+    
+
+    setup_kvm
+
 
     echo_wait "Installing Calibre Library..."
     sudo -v && wget -nv -o- https://download.calibre-ebook.com/linux-installer.sh | sudo sh /dev/stdin
@@ -93,7 +113,16 @@ function essential_programs(){
     
 }    
 
-function appearance_tools(){
+function setup_kvm() {
+    # First, install the requirements:
+    sudo apt install qemu qemu-kvm libvirt-daemon-system libvirt-clients bridge-utils virtinst virt-manager -y
+    
+    # Next, set up any additional permissions here:
+    sudo systemctl enable libvirtd
+    
+}
+
+function appearance_tools() {
     if (( IS_DESKTOP == 1 ));
     then
 	sudo apt install lightdm gnome-tweaks gnome-shell-extensions -y
@@ -112,6 +141,9 @@ function appearance_tools(){
 
 }
 
+# ------------------------------------------------------------------------------
+# Web Browsers
+# ------------------------------------------------------------------------------
 function brave_browser(){
     echo_wait "Now installing Brave Browser."
     sudo apt install apt-transport-https curl -y
@@ -124,14 +156,22 @@ function brave_browser(){
     sudo apt install brave-browser -y
 }
 
+
+# ------------------------------------------------------------------------------
+# Programming Tools
+# ------------------------------------------------------------------------------
+
 function install_text_editors() {
     sudo apt install neovim -y
     install_emacs
 
 }     
 
+
 function install_emacs_debian() {
-    mkdir -p "$temp_download_path" && cd "$temp_download_path"
+    mkdir -p "$temp_download_path"
+    cd_or_exit "$temp_download_path"
+
     download_link="https://drive.google.com/uc?id=1DyGv2iW-cfZZFdDfNCzxu_8qhntJoNqz"
     file_name="emacs29_29.0.5-1_native-comp_amd64-2021-10-31.deb"
 
@@ -150,7 +190,7 @@ function install_emacs_debian() {
     fi
 
     # Now return
-    cd "$current_path"
+    cd_or_exit "$current_path"
 }    
 
 function install_emacs_dependencies() {
@@ -165,9 +205,12 @@ function install_emacs_dependencies() {
 
 function compile_emacs_from_source() {
     mkdir -p "$temp_download_path"
-    cd "$temp_download_path"
 
-    mkdir -p "$temp_download_path/EMACS" && cd "$temp_download_path/EMACS"
+    cd_or_exit "$temp_download_path"
+    # cd "$temp_download_path"
+
+    mkdir -p "$temp_download_path/EMACS"
+    cd_or_exit "$temp_download_path/EMACS"
 
     git clone https://git.savannah.gnu.org/git/emacs.git
     
@@ -184,9 +227,11 @@ function compile_emacs_from_source() {
     (make -j4 && sudo make install) || (echo "Could not make emacs. Aborting.")
 
     # Now return to the original path
-    cd "$current_path"
+    cd_or_exit "$current_path"
+    # cd "$current_path"
    
 }
+
 function install_emacs() {
     echo "First installing Dependencies."
     install_emacs_dependencies
@@ -218,7 +263,8 @@ function install_emacs() {
     fi
 
     # Now return back to current_path just in case:
-    cd "$current_path"
+    cd_or_exit "$current_path"
+    # cd "$current_path"
 }
 
     
@@ -271,13 +317,17 @@ function golang-tools() {
 
 function javascript_tools() {
     # For more information, go to
-    # https://github.com/nodesource/distributions/blob/master/README.md    
-    cd "$temp_download" || (mkdir -p "$temp_download" && cd "$temp_download")
+    # https://github.com/nodesource/distributions/blob/master/README.md
+    mkdir -p "$temp_download_path"
+    cd_or_exit "$temp_download_path"
+       
     curl -sL "https://deb.nodesource.com/setup_${NODE_VERSION}.x" -o nodesource_setup.sh
-    chmod +x nodesource_setup.sh
+    chmod +x ./nodesource_setup.sh
     sudo ./nodesource_setup.sh
     
     sudo apt install nodejs -y
+
+    cd_or_exit "$current_path"
 
 }
 
@@ -292,7 +342,8 @@ function java_tools() {
 function install_googletest() {
     
     mkdir -p "$temp_download_path"
-    cd "$temp_download_path"
+    cd_or_exit "$temp_download_path"
+    # cd "$temp_download_path"
     
     # Clone and build googletest.
     git clone https://github.com/google/googletest.git
@@ -304,7 +355,8 @@ function install_googletest() {
     sudo make install
 
     # Now return
-    cd "$current_path"
+    cd_or_exit "$current_path"
+    # cd "$current_path"
 
 }    
 
@@ -372,7 +424,9 @@ function csharp_tools() {
     sudo apt install apt-transport-https -y
     sudo apt install "dotnet-sdk-${DOT_NET_VERSION}" -y
 
-    cd "$home_path"
+
+    cd_or_exit "$home_path"
+    # cd "$home_path"
 
 }
 
@@ -398,8 +452,13 @@ function python_tools() {
 
 }
 
+# ------------------------------------------------------------------------------
+# Services
+# ------------------------------------------------------------------------------
+
 function install_fcron() {
-    cd "$temp_download_path"
+    cd_or_exit "$temp_download_path"
+    # cd "$temp_download_path"
     
     echo_wait "Installing fcron dependencies first..."
     sudo apt install git autoconf docbook docbook-xsl docbook-xml docbook-utils manpages-dev -y
@@ -416,10 +475,14 @@ function install_fcron() {
     sudo systemctl enable fcron
     
     # Now return:
-    cd "$current_path"
+    cd_or_exit "$current_path"
+    # cd "$current_path"
     
 }    
 
+# ------------------------------------------------------------------------------
+# Additional Tools
+# ------------------------------------------------------------------------------
 function audiovisual_tools() {
     echo_wait "Installing some more tools..."
     sudo apt install kdenlive -y
@@ -469,15 +532,15 @@ function manual_debians() {
         
     # Now attempt to install each debian file:
     yes | sudo dpkg -Ri .
-    
-    cd "$current_path" || (echo "Could not enter $current_path. Exiting." && exit)
+
+    cd_or_exit "$current_path"
 }    
 
 function vidya() {
     echo_wait "Now installing Steam and some emulators!"
     if (( IS_DESKTOP == 1 ));
     then	
-	sudo apt install steam dolphin-emu -y
+	sudo apt install steam-installer dolphin-emu -y
         
         sudo add-apt-repository ppa:pcsx2-team/pcsx2-daily -y
         sudo apt update
@@ -491,10 +554,12 @@ function vidya() {
 
     echo "Now, I would like to install wine on your system, but each Ubuntu version requires a different repository. Instead, I'll just enable 32-bit architecture and add the repository key."
     sudo dpkg --add-architecture i386
-    cd "$home_path" || (echo "Could not enter $home_path... Exiting." && exit)
+
+    cd_or_exit "$home_path"
     wget -nc https://dl.winehq.org/wine-builds/winehq.key
     sudo apt-key add winehq.key
-    cd "$current_path" || (echo "Could not enter $current_path... Exiting." && exit)
+
+    cd_or_exit "$current_path"
 }
 
 # Handles installing IDEs through snap.
@@ -537,7 +602,7 @@ function increase_swap_size() {
     sudo mkswap /swapfile
 
     echo "Now adding /swapfile to /etc/fstab"
-    echo '/swapfile none swap sw 0 0' | sudo tee -a /etc/fstab
+    echo '/swapfile none swap sw 0 0' | sudo tee -a /etc/fstab 
     
     echo_wait "Now Re-enable the swap."
     sudo swapon -a
@@ -616,7 +681,8 @@ function swap_caps_lock_and_ctrl() {
         grep_check=$(grep "XKBOPTIONS" "/etc/default/keyboard")
         if [[ -z "$grep_check" ]];
         then
-            sudo echo 'XKBOPTIONS="ctrl:swapcaps"' >> /etc/default/keyboard
+            sudo echo 'XKBOPTIONS="ctrl:swapcaps"'| tee --append "/etc/default/keyboard"
+            
         else       
             # Otherwise, replace an empty XKBOPTIONS line with the ctrl:swapcaps option.
             sudo sed -i 's/XKBOPTIONS=\"\"/XKBOPTIONS=\"ctrl:swapcaps\"/g' /etc/default/keyboard
