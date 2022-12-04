@@ -374,7 +374,7 @@ function cpp_tools {
 
     cppman --cache-all &
     
-    sudo apt install libboost-dev -y
+    sudo apt install libboost-all-dev -y
     sudo apt install cmake -y
 
     # For Doxygen:
@@ -492,7 +492,7 @@ function audiovisual_tools() {
     sudo apt install easytag -y
 
 
-    sudo apt-get install pavucontrol spek -y  
+    sudo apt-get install pavucontrol -y
 
     if (( IS_DESKTOP == 1 ));
     then
