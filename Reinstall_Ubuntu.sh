@@ -26,7 +26,7 @@ IS_DESKTOP=1
 IS_SERVER=0
 
 
-GCC_VERSION="11"
+GCC_VERSION="12"
 CLANG_VERSION="14"
 EMACS_VERSION="27"
 PHP_VERSION="8.1"
@@ -101,7 +101,7 @@ function essential_programs() {
     sudo apt install libreoffice -y
     sudo apt install thunderbird -y
     sudo apt install baobab eog gnome-system-monitor -y
-    
+    sudo apt install webp-pixbuf-loader -y
 
     setup_kvm
 
