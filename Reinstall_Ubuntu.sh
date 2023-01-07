@@ -14,7 +14,7 @@
 # Global Variables
 # ------------------------------------------------------------------------------
 
-version_num="2022-08-14"
+version_num="2022-12-25"
 dash_line_len=80
 current_path=$(pwd)
 user_name="$USER"
@@ -214,8 +214,8 @@ function compile_emacs_from_source() {
 
     git clone https://git.savannah.gnu.org/git/emacs.git
     
-    mkdir -p "build" && cd "build"
-
+    mkdir -p "build" && cd_or_exit "build"
+    
     # Call autogen:
     ../emacs/autogen.sh
 

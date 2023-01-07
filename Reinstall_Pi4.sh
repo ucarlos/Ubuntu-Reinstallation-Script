@@ -85,11 +85,11 @@ function install_fcon() {
     sudo apt install git autoconf docbook docbook-xsl docbook-utils manpages-dev -y
 
     # Download the tarball and extract it.
-    wget "http://fcron.free.fr/archives/fcron-3.3.0.src.tar.gz"
-    tar -xvf "fcron-3.3.0.src.tar.gz"
+    wget "http://fcron.free.fr/archives/fcron-3.3.1.src.tar.gz"
+    tar -xvf "fcron-3.3.1.src.tar.gz"
 
     # Now install the damn thing.
-    cd "fcron-3.3.0" && ./configure && make && sudo make install
+    cd "fcron-3.3.1" && ./configure && make && sudo make install
 
     # Now return to previous directory:
     cd "$current_path"       
