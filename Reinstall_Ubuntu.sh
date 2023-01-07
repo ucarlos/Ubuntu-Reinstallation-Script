@@ -14,7 +14,7 @@
 # Global Variables
 # ------------------------------------------------------------------------------
 
-version_num="2022-12-25"
+version_num="2023-01-07"
 dash_line_len=80
 current_path=$(pwd)
 user_name="$USER"
