@@ -25,7 +25,6 @@ home_path="/home/$user_name/"
 IS_DESKTOP=1
 IS_SERVER=0
 
-
 GCC_VERSION="12"
 CLANG_VERSION="14"
 EMACS_VERSION="27"
@@ -82,7 +81,7 @@ function essential_programs() {
            sudo apt install hexchat filezilla -y
     fi
     
-    sudo apt install htop git -y
+    sudo apt install htop btop git -y
     sudo apt install tmux gedit net-tools -y
     sudo apt install fdupes -y
     sudo apt install neofetch screenfetch -y
@@ -100,9 +99,9 @@ function essential_programs() {
     sudo apt install nmap -y
     sudo apt install libreoffice -y
     sudo apt install thunderbird -y
-    sudo apt install baobab eog gnome-system-monitor -y
+    sudo apt install baobab eog gnome-system-monitor evince -y
     sudo apt install webp-pixbuf-loader -y
-
+    sudo apt install espeak -y
     setup_kvm
 
 
@@ -144,7 +143,7 @@ function appearance_tools() {
 # ------------------------------------------------------------------------------
 # Web Browsers
 # ------------------------------------------------------------------------------
-function brave_browser(){
+function brave_browser() {
     echo_wait "Now installing Brave Browser."
     sudo apt install apt-transport-https curl -y
     
@@ -376,6 +375,7 @@ function cpp_tools {
     
     sudo apt install libboost-all-dev -y
     sudo apt install cmake -y
+    sudo apt install libspdlog-dev -y
 
     # For Doxygen:
     sudo apt install doxygen-* -y
@@ -478,7 +478,7 @@ function install_fcron() {
     cd_or_exit "$current_path"
     # cd "$current_path"
     
-}    
+}
 
 # ------------------------------------------------------------------------------
 # Additional Tools
