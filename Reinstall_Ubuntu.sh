@@ -29,7 +29,7 @@ GCC_VERSION="12"
 CLANG_VERSION="14"
 EMACS_VERSION="27"
 PHP_VERSION="8.1"
-NODE_VERSION="16"
+NODE_VERSION="20"
 JAVA_VERSION_LIST=('8' '11' '18')
 POSTGRES_VERSION="14"
 DOT_NET_VERSION="6.0"
@@ -171,8 +171,8 @@ function install_emacs_debian() {
     mkdir -p "$temp_download_path"
     cd_or_exit "$temp_download_path"
 
-    download_link="https://drive.google.com/uc?id=1DyGv2iW-cfZZFdDfNCzxu_8qhntJoNqz"
-    file_name="emacs29_29.0.5-1_native-comp_amd64-2021-10-31.deb"
+    download_link="https://drive.google.com/uc?export=download&id=1y7puzujXcqpueSkZxiDrMXAX4-8EC6IO"
+    file_name="emacs30_30.0.5-1_native-comp_2023-04-11_amd64.deb"
 
 
     "$home_path/.local/bin/gdown" "$download_link"
@@ -196,7 +196,8 @@ function install_emacs_dependencies() {
     sudo apt install libjansson-dev "libgccjit-${GCC_VERSION}-dev" -y
     sudo apt install libclang-dev clangd-"${CLANG_VERSION}" -y
     sudo apt install libwebkit2gtk-4.0-dev -y
-    sudo apt install libjpeg-dev libtiff-dev libncurses-dev texinfo libxpm-dev -y
+    sudo apt install libjpeg-dev libtiff-dev libncurses-dev texinfo libxpm-dev libwebp-dev -y
+    sudo apt install libmagickcore-dev libmagick++-dev -y
     sudo apt install mailutils -y
     sudo apt install opus-tools -y
 
@@ -219,7 +220,7 @@ function compile_emacs_from_source() {
     ../emacs/autogen.sh
 
     # Now call configure here:
-    ../emacs/configure --with-mailutils --with-json --with-native-compilation --with-x --with-xwidgets
+    ../emacs/configure --with-mailutils --with-json --with-native-compilation --with-x --with-xwidgets --with-imagemagick
 
 
     # Now make it
@@ -519,17 +520,45 @@ function manual_debians() {
     cd "$temp_download_path" || (echo "Could not enter $temp_download_path. Exiting." && exit)
 
     # VNC Client
-    wget https://www.realvnc.com/download/file/viewer.files/VNC-Viewer-6.20.529-Linux-x64.deb
-    sudo dpkg -i VNC-Viewer-6.20.529-Linux-x64.deb
+    # Grab the newest debian: (Warning: If the site is messed up, you're fucked...)
+
+    # curl --silent https://www.realvnc.com/en/connect/download/viewer/ | grep "DEB x64" | grep -Eo -e "data-file=\"[^\>]*" | awk -F "=" '{print $2;}
+    vnc_link=$(curl --silent https://www.realvnc.com/en/connect/download/viewer/ | grep "DEB x64" | grep -Eo -e "data-file=\"[^\>]*" | awk -F "=" '{print $2;}')
+    if [[ -z "$vnc_link" ]]
+    then
+        vnc_link="https://www.realvnc.com/download/file/viewer.files/VNC-Viewer-6.20.529-Linux-x64.deb"
+    fi
+
+    wget "$vnc_link"
 
 
+    # Discord
+    wget -O "discord-recent-version.deb" "https://discord.com/api/download?platform=linux&format=deb"
+    
     # VNC server
     wget https://www.realvnc.com/download/file/vnc.files/VNC-Server-6.7.2-Linux-x64.deb
 
 
     # Strawberry
     wget https://files.strawberrymusicplayer.org/strawberry_1.0.5-jammy_amd64.deb
+
+    # Minecraft
+    wget "https://launcher.mojang.com/download/Minecraft.deb"
+    
+    # ProtonVPN
+    wget "https://repo.protonvpn.com/debian/dists/stable/main/binary-all/protonvpn-stable-release_1.0.3-2_all.deb"
+
+    checksum_result=$(echo "c68a0b8dad58ab75080eed7cb989e5634fc88fca051703139c025352a6ee19ad  protonvpn-stable-release_1.0.3-2_all.deb" | sha256sum --check -)
+    if [[ "$checksum_result" != "protonvpn-stable-release_1.0.3-2_all.deb: OK" ]];
+    then
+        echo "Checksum for ProtonVPN Debian doesn't check out; Deleting file."
+        rm -v "protonvpn-stable-release_1.0.3-2_all.deb"
+    fi
         
+    
+    # TeamViewer:
+    wget "https://download.teamviewer.com/download/linux/teamviewer_amd64.deb"
+    
     # Now attempt to install each debian file:
     yes | sudo dpkg -Ri .
 
@@ -566,17 +595,16 @@ function vidya() {
 function snap_ides() {
     echo_wait "Now installing snap programs..."
     sudo snap install clion --classic
-    sudo snap install pycharm-community --classic
+    sudo snap install pycharm-professional --classic
+    sudo snap install intellij-idea-ultimate --classic    
     sudo snap install code --classic
     
     if (( IS_DESKTOP == 1 ));
     then
         sudo snap install android-studio --classic
+        sudo snap install rider --classic
     fi
     
-    sudo snap install intellij-idea-community --classic
-    sudo snap install rider --classic
-
 }    
 
 # Handles applications that can run through the command line.
