@@ -58,11 +58,9 @@ function cd_or_exit() {
 
 
 
-
 # ------------------------------------------------------------------------------
 # Drivers
 # ------------------------------------------------------------------------------
-
 function graphic_drivers() {
     echo_wait "Installing Graphic Drivers."
     sudo ubuntu-drivers autoinstall
@@ -102,6 +100,7 @@ function essential_programs() {
     sudo apt install baobab eog gnome-system-monitor evince -y
     sudo apt install webp-pixbuf-loader -y
     sudo apt install espeak -y
+    sudo apt install speedtest-cli -y
     setup_kvm
 
 
@@ -602,6 +601,7 @@ function snap_ides() {
     if (( IS_DESKTOP == 1 ));
     then
         sudo snap install android-studio --classic
+        sudo snap install phpstorm --classic
         sudo snap install rider --classic
     fi
     
@@ -710,7 +710,6 @@ function swap_caps_lock_and_ctrl() {
         if [[ -z "$grep_check" ]];
         then
             sudo echo 'XKBOPTIONS="ctrl:swapcaps"'| tee --append "/etc/default/keyboard"
-            
         else       
             # Otherwise, replace an empty XKBOPTIONS line with the ctrl:swapcaps option.
             sudo sed -i 's/XKBOPTIONS=\"\"/XKBOPTIONS=\"ctrl:swapcaps\"/g' /etc/default/keyboard
