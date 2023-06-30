@@ -101,6 +101,7 @@ function essential_programs() {
     sudo apt install webp-pixbuf-loader -y
     sudo apt install espeak -y
     sudo apt install speedtest-cli -y
+    sudo apt iunstall gnucash -y
     setup_kvm
 
 
@@ -308,10 +309,7 @@ function golang-tools() {
     sudo add-apt-repository ppa:longsleep/golang-backports -y
     sudo apt update
     sudo apt install golang-go -y
-
-    # Install sqls server:
-    go install github.com/lighttiger2505/sqls@latest
-         
+           
 }
 
 function javascript_tools() {
@@ -596,7 +594,7 @@ function snap_ides() {
     sudo snap install clion --classic
     sudo snap install pycharm-professional --classic
     sudo snap install intellij-idea-ultimate --classic    
-    sudo snap install code --classic
+    sudo snap install codium --classic
     
     if (( IS_DESKTOP == 1 ));
     then
