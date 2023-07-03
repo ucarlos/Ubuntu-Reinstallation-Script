@@ -4,9 +4,13 @@
 #
 # Reinstall_Ubuntu.sh
 # This is essentially a more user friendly version of New_installation.sh
-# Which reinstalls all the programs I would want in a Linux Reinstallation.
-# It covers normal Desktop and Laptop Installations, along with a minimal build
-# if I wanted to. This requires that the installation uses apt.
+# Which reinstalls all the programs I would want in a Ubuntu Reinstallation.
+# 
+# It covers a normal workstation desktop installation, media server installation
+# and a minimal build. 
+
+# Note:
+# This installation script is meant to be used in a Ubuntu Distribution.
 # ------------------------------------------------------------------------------
 
 
@@ -14,25 +18,29 @@
 # Global Variables
 # ------------------------------------------------------------------------------
 
-version_num="2023-01-07"
-dash_line_len=80
-current_path=$(pwd)
-user_name="$USER"
-temp_download_path="/tmp/Downloads"
-home_path="/home/$user_name/"
+VERSION_NUMBER="2023-07-01"
+DASH_LINE_LENGTH=80
+CURRENT_PATH=$(pwd)
+USERNAME="$USER"
+TEMP_DOWNLOAD_PATH="/tmp/Downloads"
+HOME_PATH="/home/$USERNAME/"
 
 # 0 is false, while 1 is true
 IS_DESKTOP=1
-IS_SERVER=0
+IS_MEDIA_SERVER=0
+IS_HEADLESS_SERVER=0
 
 GCC_VERSION="12"
-CLANG_VERSION="14"
-EMACS_VERSION="27"
+CLANG_VERSION="15"
 PHP_VERSION="8.1"
 NODE_VERSION="20"
 JAVA_VERSION_LIST=('8' '11' '18')
 POSTGRES_VERSION="14"
 DOT_NET_VERSION="6.0"
+VNC_VERSION="7.5.1"
+PLEX_VERISON="1.32.4.7195-7c8f9d3b6"
+PLEX_USERNAME="plex"
+
 
 # ------------------------------------------------------------------------------
 # Essential Helper Functions
@@ -44,7 +52,7 @@ function echo_wait() {
 }
 
 function print_dashed_line() {
-    for ((i = 1; i <= dash_line_len; i++));
+    for ((i = 1; i <= DASH_LINE_LENGTH; i++));
     do
 	printf "-"
     done
@@ -54,8 +62,17 @@ function print_dashed_line() {
 
 function cd_or_exit() {
     cd "$1" || (echo "Error: Could not change directory to $1. Aborting." && exit 1)
-}    
+}
 
+
+# ------------------------------------------------------------------------------
+# First things first:
+# ------------------------------------------------------------------------------
+
+function update_first() {
+    sudo apt update
+    sudo apt upgrade -y
+}
 
 
 # ------------------------------------------------------------------------------
@@ -68,11 +85,11 @@ function graphic_drivers() {
 
 
 # ------------------------------------------------------------------------------
-# Essential Programs
+# Essential Functions
 # ------------------------------------------------------------------------------
 function essential_programs() {
     echo_wait "Installing some Essential Programs."
-    if (( IS_SERVER != 1 ));
+    if (( IS_HEADLESS_SERVER != 1 ));
        then
 	   sudo apt install deja-dup duplicity mpv -y
            sudo apt install gnome-disk-utility -y
@@ -101,8 +118,13 @@ function essential_programs() {
     sudo apt install webp-pixbuf-loader -y
     sudo apt install espeak -y
     sudo apt install speedtest-cli -y
-    sudo apt iunstall gnucash -y
-    setup_kvm
+    sudo apt install gnucash -y
+
+
+    if (( IS_DESKTOP == 1 ));
+    then        
+        setup_kvm
+    fi
 
 
     echo_wait "Installing Calibre Library..."
@@ -132,7 +154,7 @@ function appearance_tools() {
     
     sudo apt install fonts-firacode -y
 
-    if (( IS_SERVER != 1 ));
+    if (( IS_HEADLESS_SERVER != 1 ));
     then
 	sudo apt install paper-icon-theme arc-theme -y
 	sudo apt install variety -y
@@ -168,14 +190,20 @@ function install_text_editors() {
 
 
 function install_emacs_debian() {
-    mkdir -p "$temp_download_path"
-    cd_or_exit "$temp_download_path"
+    mkdir -p "$TEMP_DOWNLOAD_PATH"
+    cd_or_exit "$TEMP_DOWNLOAD_PATH"
 
     download_link="https://drive.google.com/uc?export=download&id=1y7puzujXcqpueSkZxiDrMXAX4-8EC6IO"
     file_name="emacs30_30.0.5-1_native-comp_2023-04-11_amd64.deb"
 
-
-    "$home_path/.local/bin/gdown" "$download_link"
+    
+    if (( IS_MEDIA_SERVER == 1 ));
+    then
+        # Install Python just in case
+        python_tools
+    fi
+    
+    "$HOME_PATH/.local/bin/gdown" "$download_link"
 
     
     if [[ ! -f "$file_name" ]]
@@ -183,14 +211,14 @@ function install_emacs_debian() {
         echo "Cannot download Emacs Debian. Aborting."
         return
     else
-        sudo dpkg -i "$temp_download_path/$file_name"
+        sudo dpkg -i "$TEMP_DOWNLOAD_PATH/$file_name"
         sudo apt install --fix-broken
         echo "Complete!"
     fi
 
     # Now return
-    cd_or_exit "$current_path"
-}    
+    cd_or_exit "$CURRENT_PATH"
+}
 
 function install_emacs_dependencies() {
     sudo apt install libjansson-dev "libgccjit-${GCC_VERSION}-dev" -y
@@ -204,13 +232,13 @@ function install_emacs_dependencies() {
 }
 
 function compile_emacs_from_source() {
-    mkdir -p "$temp_download_path"
+    mkdir -p "$TEMP_DOWNLOAD_PATH"
 
-    cd_or_exit "$temp_download_path"
-    # cd "$temp_download_path"
+    cd_or_exit "$TEMP_DOWNLOAD_PATH"
+    # cd "$TEMP_DOWNLOAD_PATH"
 
-    mkdir -p "$temp_download_path/EMACS"
-    cd_or_exit "$temp_download_path/EMACS"
+    mkdir -p "$TEMP_DOWNLOAD_PATH/EMACS"
+    cd_or_exit "$TEMP_DOWNLOAD_PATH/EMACS"
 
     git clone https://git.savannah.gnu.org/git/emacs.git
     
@@ -227,8 +255,8 @@ function compile_emacs_from_source() {
     (make -j4 && sudo make install) || (echo "Could not make emacs. Aborting.")
 
     # Now return to the original path
-    cd_or_exit "$current_path"
-    # cd "$current_path"
+    cd_or_exit "$CURRENT_PATH"
+    # cd "$CURRENT_PATH"
    
 }
 
@@ -242,13 +270,12 @@ function install_emacs() {
     then
         install_emacs_debian
     else
-        read -r -n2 -p "How about installing emacs through a repository? [y/n]" user_input
+        read -r -n2 -p "How about installing the default emacs for your distribution? [y/n]" user_input
         
         if [[ $user_input =~ [yY] ]]
         then
-            echo "Alright then, I'll just setup the repository and install Emacs ${EMACS_VERSION}."
-	    sudo add-apt-repository ppa:kelleyk/emacs -y
-	    sudo apt install "emacs${EMACS_VERSION}" -y
+            echo "Alright then, It shouldn't take long."
+            sudo apt install emacs -y
         else
             read -r -n2 -p "How about compiling it from source? [y/n] " user_input
 
@@ -262,70 +289,17 @@ function install_emacs() {
         fi
     fi
 
-    # Now return back to current_path just in case:
-    cd_or_exit "$current_path"
-    # cd "$current_path"
+    # Now return back to CURRENT_PATH just in case:
+    cd_or_exit "$CURRENT_PATH"
 }
 
     
-
-function programming_tools() {
-    echo_wait "Now installing some Programming libraries and tools."
-    # C/C++
-    cpp_tools
-
-    # C#
-    csharp_tools
-
-    # Golang
-    golang-tools
-    
-    # Java
-    java_tools
-
-    # JavaScript
-    javascript_tools
-      
-    # PHP
-    php_tools
-
-    # Python
-    python_tools
-       
-    # Racket
-    sudo apt install racket -y
-
-    # Static Analyzer for bash
-    sudo apt install shellcheck -y
-
-
-    # Text Editors
-    install_text_editors
-
-    sql_tools
-}
 
 function golang-tools() {
     sudo add-apt-repository ppa:longsleep/golang-backports -y
     sudo apt update
     sudo apt install golang-go -y
            
-}
-
-function javascript_tools() {
-    # For more information, go to
-    # https://github.com/nodesource/distributions/blob/master/README.md
-    mkdir -p "$temp_download_path"
-    cd_or_exit "$temp_download_path"
-       
-    curl -sL "https://deb.nodesource.com/setup_${NODE_VERSION}.x" -o nodesource_setup.sh
-    chmod +x ./nodesource_setup.sh
-    sudo ./nodesource_setup.sh
-    
-    sudo apt install nodejs -y
-
-    cd_or_exit "$current_path"
-
 }
 
 function java_tools() {
@@ -336,11 +310,27 @@ function java_tools() {
 
 }
 
+function javascript_tools() {
+    # For more information, go to
+    # https://github.com/nodesource/distributions/blob/master/README.md
+    mkdir -p "$TEMP_DOWNLOAD_PATH"
+    cd_or_exit "$TEMP_DOWNLOAD_PATH"
+       
+    curl -sL "https://deb.nodesource.com/setup_${NODE_VERSION}.x" -o nodesource_setup.sh
+    chmod +x ./nodesource_setup.sh
+    sudo ./nodesource_setup.sh
+    
+    sudo apt install nodejs -y
+
+    cd_or_exit "$CURRENT_PATH"
+
+}
+
 function install_googletest() {
     
-    mkdir -p "$temp_download_path"
-    cd_or_exit "$temp_download_path"
-    # cd "$temp_download_path"
+    mkdir -p "$TEMP_DOWNLOAD_PATH"
+    cd_or_exit "$TEMP_DOWNLOAD_PATH"
+    # cd "$TEMP_DOWNLOAD_PATH"
     
     # Clone and build googletest.
     git clone https://github.com/google/googletest.git
@@ -352,9 +342,7 @@ function install_googletest() {
     sudo make install
 
     # Now return
-    cd_or_exit "$current_path"
-    # cd "$current_path"
-
+    cd_or_exit "$CURRENT_PATH"
 }    
 
 function cpp_tools {    
@@ -397,20 +385,10 @@ function php_tools() {
 
 }
 
-function sql_tools() {
-
-    sudo apt install mariadb-server -y
-    sudo apt install "postgresql-${POSTGRES_VERSION}" -y
-    sudo apt install pgadmin3 -y
-
-    # Now install mysql workbench:
-    sudo snap install mysql-workbench-community
-}
-
 
 function csharp_tools() {
     # First, cd to ~/:
-    cd "$temp_download_path" || (echo "Some error occurred in csharp_tools." && exit 1)
+    cd "$TEMP_DOWNLOAD_PATH" || (echo "Some error occurred in csharp_tools." && exit 1)
   
     # Install the packing signing key.
     wget https://packages.microsoft.com/config/ubuntu/20.04/packages-microsoft-prod.deb -O packages-microsoft-prod.deb
@@ -423,8 +401,8 @@ function csharp_tools() {
     sudo apt install "dotnet-sdk-${DOT_NET_VERSION}" -y
 
 
-    cd_or_exit "$home_path"
-    # cd "$home_path"
+    cd_or_exit "$HOME_PATH"
+    # cd "$HOME_PATH"
 
 }
 
@@ -450,54 +428,79 @@ function python_tools() {
 
 }
 
-# ------------------------------------------------------------------------------
-# Services
-# ------------------------------------------------------------------------------
+function sql_tools() {
 
-function install_fcron() {
-    cd_or_exit "$temp_download_path"
-    # cd "$temp_download_path"
+    sudo apt install mariadb-server -y
+    sudo apt install "postgresql-${POSTGRES_VERSION}" -y
+    sudo apt install pgadmin3 -y
+
+    # Now install mysql workbench:
+    sudo snap install mysql-workbench-community
+}
+
+
+
+function programming_tools() {
+    echo_wait "Now installing some Programming libraries and tools."
+    # C/C++
+    cpp_tools
+
+    # C#
+    csharp_tools
+
+    # Golang
+    golang-tools
     
-    echo_wait "Installing fcron dependencies first..."
-    sudo apt install git autoconf docbook docbook-xsl docbook-xml docbook-utils manpages-dev -y
+    # Java
+    java_tools
+
+    # JavaScript
+    javascript_tools
+      
+    # PHP
+    php_tools
+
+    # Python
+    python_tools
+       
+    # Racket
+    sudo apt install racket -y
+
+    # Static Analyzer for bash
+    sudo apt install shellcheck -y
+
+    # SQL
+    sql_tools
 
     
-    # Download the tarball
-    wget "http://fcron.free.fr/archives/fcron-3.3.1.src.tar.gz"
-    tar -xvf "fcron-3.3.1.src.tar.gz"
+    # Text Editors
+    install_text_editors
 
-    # Now install the damn thing
-    cd "fcron-3.3.1" && ./configure && make && sudo make install
 
-    # Now enable it:
-    sudo systemctl enable fcron
-    
-    # Now return:
-    cd_or_exit "$current_path"
-    # cd "$current_path"
-    
+    # Just to make sure, return back to your current path:
+    cd_or_exit "$CURRENT_PATH"
 }
 
 # ------------------------------------------------------------------------------
 # Additional Tools
 # ------------------------------------------------------------------------------
+
 function audiovisual_tools() {
     echo_wait "Installing some more tools..."
-    sudo apt install kdenlive -y
-    sudo apt install audacity -y
-    sudo add-apt-repository ppa:otto-kesselgulasch/gimp -y
-    sudo apt install gimp -y
-    sudo apt install easytag -y
-
-
-    sudo apt-get install pavucontrol -y
-
+    
     if (( IS_DESKTOP == 1 ));
     then
+        sudo apt install kdenlive -y
+        sudo apt install audacity -y
+        sudo add-apt-repository ppa:otto-kesselgulasch/gimp -y
+        sudo apt install gimp -y
+        sudo apt install easytag -y
 	sudo add-apt-repository ppa:obsproject/obs-studio -y
 	sudo apt-get install obs-studio -y	
     fi
 
+
+    sudo apt-get install pavucontrol -y
     
 }
 
@@ -512,10 +515,30 @@ function manual_debians() {
     echo_wait "Now downloading and installing some .deb files that have to be installed manually."
     
     # Create the download path if it exists.
-    mkdir -p "$temp_download_path"
+    mkdir -p "$TEMP_DOWNLOAD_PATH"
     
-    cd "$temp_download_path" || (echo "Could not enter $temp_download_path. Exiting." && exit)
+    cd "$TEMP_DOWNLOAD_PATH" || (echo "Could not enter $TEMP_DOWNLOAD_PATH. Exiting." && exit)
 
+    if (( IS_DESKTOP == 1 ));
+    then
+        # Discord
+        wget -O "discord-recent-version.deb" "https://discord.com/api/download?platform=linux&format=deb"
+
+        # Strawberry
+        wget "https://files.strawberrymusicplayer.org/strawberry_1.0.5-jammy_amd64.deb"
+
+        # Minecraft
+        wget "https://launcher.mojang.com/download/Minecraft.deb"
+
+        # TeamViewer:
+        wget "https://download.teamviewer.com/download/linux/teamviewer_amd64.deb"
+        
+    fi
+
+    # --------------------------------------
+    # VNC Server and Client:
+    # --------------------------------------
+    
     # VNC Client
     # Grab the newest debian: (Warning: If the site is messed up, you're fucked...)
 
@@ -523,26 +546,25 @@ function manual_debians() {
     vnc_link=$(curl --silent https://www.realvnc.com/en/connect/download/viewer/ | grep "DEB x64" | grep -Eo -e "data-file=\"[^\>]*" | awk -F "=" '{print $2;}')
     if [[ -z "$vnc_link" ]]
     then
-        vnc_link="https://www.realvnc.com/download/file/viewer.files/VNC-Viewer-6.20.529-Linux-x64.deb"
+        vnc_link="https://downloads.realvnc.com/download/file/viewer.files/VNC-Viewer-${VNC_VERSION}-Linux-x64.deb"
     fi
 
     wget "$vnc_link"
 
 
-    # Discord
-    wget -O "discord-recent-version.deb" "https://discord.com/api/download?platform=linux&format=deb"
+    # Now grab the latest VNC Server debian:
+    # curl --silent "https://www.realvnc.com/en/connect/download/vnc/" | grep "DEB x64" | grep -Eo -e "data-file=\"[^\>]*" | awk -F "=" '{print $2;}'
+    vnc_link=$(curl --silent "https://www.realvnc.com/en/connect/download/vnc/" | grep "DEB x64" | grep -Eo -e "data-file=\"[^\>]*" | awk -F "=" '{print $2;}')
+    if [[ -z "$vnc_link" ]]
+    then
+        vnc_link="https://downloads.realvnc.com/download/file/vnc.files/VNC-Server-${VNC_VERSION}-Linux-x64.deb"
+    fi
     
-    # VNC server
-    wget https://www.realvnc.com/download/file/vnc.files/VNC-Server-6.7.2-Linux-x64.deb
-
-
-    # Strawberry
-    wget https://files.strawberrymusicplayer.org/strawberry_1.0.5-jammy_amd64.deb
-
-    # Minecraft
-    wget "https://launcher.mojang.com/download/Minecraft.deb"
     
+    # --------------------------------------    
     # ProtonVPN
+    # --------------------------------------
+    
     wget "https://repo.protonvpn.com/debian/dists/stable/main/binary-all/protonvpn-stable-release_1.0.3-2_all.deb"
 
     checksum_result=$(echo "c68a0b8dad58ab75080eed7cb989e5634fc88fca051703139c025352a6ee19ad  protonvpn-stable-release_1.0.3-2_all.deb" | sha256sum --check -)
@@ -551,41 +573,43 @@ function manual_debians() {
         echo "Checksum for ProtonVPN Debian doesn't check out; Deleting file."
         rm -v "protonvpn-stable-release_1.0.3-2_all.deb"
     fi
-        
+
+
+    # --------------------------------------
+    # Now install each .deb file:
+    # --------------------------------------
     
-    # TeamViewer:
-    wget "https://download.teamviewer.com/download/linux/teamviewer_amd64.deb"
-    
-    # Now attempt to install each debian file:
     yes | sudo dpkg -Ri .
 
-    cd_or_exit "$current_path"
+    cd_or_exit "$CURRENT_PATH"
 }    
 
 function vidya() {
     echo_wait "Now installing Steam and some emulators!"
-    if (( IS_DESKTOP == 1 ));
+    if (( IS_DESKTOP == 1 || IS_MEDIA_SERVER == 1));
     then	
-	sudo apt install steam-installer dolphin-emu -y
-        
+	sudo apt install steam-installer dolphin-emu -y        
         sudo add-apt-repository ppa:pcsx2-team/pcsx2-daily -y
         sudo apt update
         sudo apt install pcsx2-unstable -y
 	
     fi
-    
-    sudo add-apt-repository ppa:libretro/stable -y
-    sudo apt install libretro-* -y
-    sudo apt install retroarch -y    
+
+    if (( IS_DESKTOP == 1 ));
+       then
+           sudo add-apt-repository ppa:libretro/stable -y
+           sudo apt install libretro-* -y
+           sudo apt install retroarch -y
+    fi
 
     echo "Now, I would like to install wine on your system, but each Ubuntu version requires a different repository. Instead, I'll just enable 32-bit architecture and add the repository key."
     sudo dpkg --add-architecture i386
 
-    cd_or_exit "$home_path"
+    cd_or_exit "$HOME_PATH"
     wget -nc https://dl.winehq.org/wine-builds/winehq.key
     sudo apt-key add winehq.key
 
-    cd_or_exit "$current_path"
+    cd_or_exit "$CURRENT_PATH"
 }
 
 # Handles installing IDEs through snap.
@@ -596,23 +620,86 @@ function snap_ides() {
     sudo snap install intellij-idea-ultimate --classic    
     sudo snap install codium --classic
     
-    if (( IS_DESKTOP == 1 ));
-    then
-        sudo snap install android-studio --classic
-        sudo snap install phpstorm --classic
-        sudo snap install rider --classic
-    fi
+    sudo snap install android-studio --classic
+    sudo snap install phpstorm --classic
+    sudo snap install rider --classic
     
 }    
 
 # Handles applications that can run through the command line.
 function snap_applications() {
-    sudo snap install bitwarden
-    sudo snap install plex-desktop
-    sudo snap install spotify
+    if (( IS_DESKTOP == 1 ));
+    then
+        sudo snap install bitwarden
+        sudo snap install spotify
+        sudo snap install plex-desktop
+
+    elif (( IS_MEDIA_SERVER == 1 ));
+    then
+        sudo snap install plex-htpc
+    else
+        echo "No Snap Applications for you!"
+    fi
 
 }
 
+
+# ------------------------------------------------------------------------------
+# Media Server Only Functions
+# ------------------------------------------------------------------------------
+
+function install_and_configure_plex() {
+    echo_wait "Now installing Plex."
+    cd_or_exit "$TEMP_DOWNLOAD_PATH"
+
+    wget "https://downloads.plex.tv/plex-media-server-new/${PLEX_VERISON}/debian/plexmediaserver_${PLEX_VERISON}_amd64.deb"
+
+    if [[ ! -f "plexmediaserver_${PLEX_VERISON}_amd64.deb" ]]
+    then
+        echo "Error: Could not download plexmediaserver_${PLEX_VERISON}_amd64.deb. Aborting."
+        return        
+    fi
+
+    sudo dpkg -i "plexmediaserver_${PLEX_VERISON}_amd64.deb"
+    
+    echo_wait "Now Configuring Plex:"
+    sudo usermod -a -G "$USERNAME" "$PLEX_USERNAME"
+    sudo chown "$USER:$USERNAME" "/media/$USER"
+    sudo chmod 750 "/media/$USER"
+    sudo setfacl -m g:"$USERNAME":rwx "/media/$USER"
+    sudo service plexmediaserver restart
+
+    cd_or_exit "$CURRENT_PATH"
+}
+
+
+# ------------------------------------------------------------------------------
+# Services
+# ------------------------------------------------------------------------------
+
+function install_fcron() {
+    cd_or_exit "$TEMP_DOWNLOAD_PATH"
+    # cd "$TEMP_DOWNLOAD_PATH"
+    
+    echo_wait "Installing fcron dependencies first..."
+    sudo apt install git autoconf mailutils docbook docbook-xsl docbook-xml docbook-utils manpages-dev -y
+
+    
+    # Download the tarball
+    wget "http://fcron.free.fr/archives/fcron-3.3.1.src.tar.gz"
+    tar -xvf "fcron-3.3.1.src.tar.gz"
+
+    # Now install the damn thing
+    cd "fcron-3.3.1" && ./configure && make && sudo make install
+
+    # Now enable it:
+    sudo systemctl enable fcron
+    
+    # Now return:
+    cd_or_exit "$CURRENT_PATH"
+    # cd "$CURRENT_PATH"
+    
+}
 
 function increase_swap_size() {
     SWAP_SIZE="8"
@@ -636,10 +723,9 @@ function increase_swap_size() {
 }
 
 
-function update_first() {
-    sudo apt update
-    sudo apt upgrade -y
-}
+# ------------------------------------------------------------------------------
+# Installation Functions
+# ------------------------------------------------------------------------------
 
 function desktop_installation() {
     echo "Desktop Installation"
@@ -660,30 +746,31 @@ function desktop_installation() {
 }
 
 
-function laptop_installation() {
-    echo "Laptop Installation"
+function media_server_installation() {
+    echo "Media Server Installation"
     update_first
     
+    graphic_drivers
     essential_programs
     appearance_tools
-    programming_tools
     audiovisual_tools
-    brave_browser
-    vidya
-    snap_ides
+    programming_tools
+
+    vidya    
+    brave_browser    
     snap_applications
-    manual_debians
+    install_and_configure_plex
     install_fcron
     increase_swap_size
 }
 
-function server_installation() {
+
+function headless_server_installation() {
     update_first
     essential_programs
     programming_tools
     appearance_tools
     install_fcron
-    snap_applications
     increase_swap_size
 
 }    
@@ -726,12 +813,12 @@ function swap_caps_lock_and_ctrl() {
 function print_menu() {
     echo "The Current Time is $(date +'%m/%d/%Y %H:%M')"    
     print_dashed_line
-    echo "Ubuntu Reinstallation (Version $version_num)"
+    echo "Ubuntu Reinstallation (Version $VERSION_NUMBER)"
     print_dashed_line
     echo "Options:"
     echo "a) Default Desktop Installation"
-    echo "b) Default Laptop Installation"
-    echo "c) Minimal Server Installation"
+    echo "b) Default Media Server Installation"
+    echo "c) Minimal Headless Server Installation"
     echo "q) Quit"
     print_dashed_line
     
@@ -757,12 +844,13 @@ function print_menu() {
     elif [ "$user_input" == "b" ];
     then
 	IS_DESKTOP=0
-	laptop_installation
+        IS_MEDIA_SERVER=1
+        media_server_installation
     elif [[ "$user_input" == "c" ]];
     then
 	IS_DESKTOP=0
-	IS_SERVER=1
-	server_installation
+	IS_HEADLESS_SERVER=1
+	headless_server_installation
     else
 	echo "Exiting..."
 	exit
