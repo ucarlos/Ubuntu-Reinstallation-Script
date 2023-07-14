@@ -30,7 +30,7 @@ IS_DESKTOP=1
 IS_MEDIA_SERVER=0
 IS_HEADLESS_SERVER=0
 
-GCC_VERSION="12"
+GCC_VERSION="13"
 CLANG_VERSION="15"
 PHP_VERSION="8.1"
 NODE_VERSION="20"
@@ -351,7 +351,8 @@ function cpp_tools {
 
     # In order to allow clangd to work, you have to add the most recent corresponding
     # libstdc++ version. Otherwise, you'll get strange errors like
-    # iostream header not found or whatever. If 
+    # iostream header not found or whatever randomly.
+    # NOTE: If this start happening out of nowhere, check if the latest libstdc++ has been installed.
     sudo apt install "libstdc++-${GCC_VERSION}-dev" -y
     sudo apt install "clang-${CLANG_VERSION}" -y
     sudo apt install valgrind -y
