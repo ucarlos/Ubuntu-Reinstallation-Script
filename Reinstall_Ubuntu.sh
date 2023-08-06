@@ -18,7 +18,7 @@
 # Global Variables
 # ------------------------------------------------------------------------------
 
-VERSION_NUMBER="2023-07-01"
+VERSION_NUMBER="2023-08-01"
 DASH_LINE_LENGTH=80
 CURRENT_PATH=$(pwd)
 USERNAME="$USER"
@@ -49,6 +49,7 @@ PLEX_USERNAME="plex"
 function echo_wait() {
     echo "$1"
     sleep 1
+
 }
 
 function print_dashed_line() {
@@ -94,6 +95,12 @@ function essential_programs() {
 	   sudo apt install deja-dup duplicity mpv -y
            sudo apt install gnome-disk-utility -y
            sudo apt install hexchat filezilla -y
+           sudo apt install nautlius -y
+           sudo apt install qbittorrent -y
+           sudo apt install usb-creator-gtk -y
+           sudo apt install libreoffice -y
+           sudo apt install thunderbird -y
+           sudo apt install baobab eog gnome-system-monitor evince -y
     fi
     
     sudo apt install htop btop git -y
@@ -104,18 +111,17 @@ function essential_programs() {
     sudo apt install texlive-latex-recommended -y
     sudo apt install ttf-mscorefonts-installer -y
     sudo apt install openssh-server -y
-    sudo apt install usb-creator-gtk -y
+    
     sudo apt install curl -y
     sudo apt install checkinstall -y
-    sudo apt install qbittorrent -y
+
     sudo apt install bleachbit -y
     sudo apt install cryptsetup -y
     sudo apt install p7zip-full unrar -y
     sudo apt install nmap -y
-    sudo apt install libreoffice -y
-    sudo apt install thunderbird -y
-    sudo apt install baobab eog gnome-system-monitor evince -y
+
     sudo apt install webp-pixbuf-loader -y
+
     sudo apt install espeak -y
     sudo apt install speedtest-cli -y
     sudo apt install gnucash -y
@@ -308,6 +314,9 @@ function java_tools() {
 	sudo apt install "openjdk-${i}-jdk" -y
     done
 
+    sudo apt install libderby-java -y
+    
+
 }
 
 function javascript_tools() {
@@ -357,7 +366,8 @@ function cpp_tools {
     sudo apt install "clang-${CLANG_VERSION}" -y
     sudo apt install valgrind -y
     sudo apt install cppman -y
-
+    
+    sudo apt install libpqxx-dev libmysql++-dev -y
     cppman --cache-all &
     
     sudo apt install libboost-all-dev -y
@@ -493,7 +503,6 @@ function audiovisual_tools() {
     then
         sudo apt install kdenlive -y
         sudo apt install audacity -y
-        sudo add-apt-repository ppa:otto-kesselgulasch/gimp -y
         sudo apt install gimp -y
         sudo apt install easytag -y
 	sudo add-apt-repository ppa:obsproject/obs-studio -y
@@ -544,7 +553,7 @@ function manual_debians() {
     # Grab the newest debian: (Warning: If the site is messed up, you're fucked...)
 
     # curl --silent https://www.realvnc.com/en/connect/download/viewer/ | grep "DEB x64" | grep -Eo -e "data-file=\"[^\>]*" | awk -F "=" '{print $2;}
-    vnc_link=$(curl --silent https://www.realvnc.com/en/connect/download/viewer/ | grep "DEB x64" | grep -Eo -e "data-file=\"[^\>]*" | awk -F "=" '{print $2;}')
+    vnc_link=$(curl --silent https://www.realvnc.com/en/connect/download/viewer/ | grep "DEB x64" | grep -Eo -e "data-file=\"[^\>]*" | awk -F "=" '{print $2;}' | sed "s/\"/\'/g")
     if [[ -z "$vnc_link" ]]
     then
         vnc_link="https://downloads.realvnc.com/download/file/viewer.files/VNC-Viewer-${VNC_VERSION}-Linux-x64.deb"
@@ -555,7 +564,7 @@ function manual_debians() {
 
     # Now grab the latest VNC Server debian:
     # curl --silent "https://www.realvnc.com/en/connect/download/vnc/" | grep "DEB x64" | grep -Eo -e "data-file=\"[^\>]*" | awk -F "=" '{print $2;}'
-    vnc_link=$(curl --silent "https://www.realvnc.com/en/connect/download/vnc/" | grep "DEB x64" | grep -Eo -e "data-file=\"[^\>]*" | awk -F "=" '{print $2;}')
+    vnc_link=$(curl --silent "https://www.realvnc.com/en/connect/download/vnc/" | grep "DEB x64" | grep -Eo -e "data-file=\"[^\>]*" | awk -F "=" '{print $2;}' | sed "s/\"/\'/g")
     if [[ -z "$vnc_link" ]]
     then
         vnc_link="https://downloads.realvnc.com/download/file/vnc.files/VNC-Server-${VNC_VERSION}-Linux-x64.deb"
@@ -589,7 +598,7 @@ function vidya() {
     echo_wait "Now installing Steam and some emulators!"
     if (( IS_DESKTOP == 1 || IS_MEDIA_SERVER == 1));
     then	
-	sudo apt install steam-installer dolphin-emu -y        
+	sudo apt install steam-installer -y        
         sudo add-apt-repository ppa:pcsx2-team/pcsx2-daily -y
         sudo apt update
         sudo apt install pcsx2-unstable -y
@@ -715,9 +724,9 @@ function increase_swap_size() {
     echo_wait "Now creating the swap from /swapfile"
     sudo mkswap /swapfile
 
-    echo "Now adding /swapfile to /etc/fstab"
-    echo '/swapfile none swap sw 0 0' | sudo tee -a /etc/fstab 
-    
+    # echo "Now adding /swapfile to /etc/fstab if it doesn't exist."
+    # echo '/swapfile none swap sw 0 0' | sudo tee -a /etc/fstab
+           
     echo_wait "Now Re-enable the swap."
     sudo swapon -a
     
