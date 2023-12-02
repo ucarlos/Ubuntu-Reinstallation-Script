@@ -18,28 +18,33 @@
 # Global Variables
 # ------------------------------------------------------------------------------
 
-VERSION_NUMBER="2023-08-01"
+VERSION_NUMBER="2023-12-01"
 DASH_LINE_LENGTH=80
 CURRENT_PATH=$(pwd)
 USERNAME="$USER"
 TEMP_DOWNLOAD_PATH="/tmp/Downloads"
 HOME_PATH="/home/$USERNAME/"
 
+# Specified Booleans
 # 0 is false, while 1 is true
 IS_DESKTOP=1
 IS_MEDIA_SERVER=0
 IS_HEADLESS_SERVER=0
+IS_VALID_UBUNTU_VERSION=1
 
-GCC_VERSION="13"
+
 CLANG_VERSION="15"
-PHP_VERSION="8.1"
-NODE_VERSION="20"
-JAVA_VERSION_LIST=('8' '11' '18')
-POSTGRES_VERSION="14"
 DOT_NET_VERSION="6.0"
-VNC_VERSION="7.5.1"
-PLEX_VERISON="1.32.4.7195-7c8f9d3b6"
+GCC_VERSION="13"
+INTENDED_UBUNTU_VERSION="22.04"
+JAVA_VERSION_LIST=('8' '11' '18')
+LOCAL_EMACS_FILENAME="emacs30_30.0.5-1_amd64-2023-09-26.deb"
+PHP_VERSION="8.1"
 PLEX_USERNAME="plex"
+PLEX_VERSION_NUMBER="1.32.4.7195-7c8f9d3b6"
+POSTGRES_VERSION="14"
+VNC_VERSION="7.5.1"
+
 
 
 # ------------------------------------------------------------------------------
@@ -55,7 +60,7 @@ function echo_wait() {
 function print_dashed_line() {
     for ((i = 1; i <= DASH_LINE_LENGTH; i++));
     do
-	printf "-"
+        printf "-"
     done
     echo ""
     
@@ -92,7 +97,7 @@ function essential_programs() {
     echo_wait "Installing some Essential Programs."
     if (( IS_HEADLESS_SERVER != 1 ));
        then
-	   sudo apt install deja-dup duplicity mpv -y
+           sudo apt install deja-dup duplicity mpv -y
            sudo apt install gnome-disk-utility -y
            sudo apt install hexchat filezilla -y
            sudo apt install nautlius -y
@@ -134,7 +139,7 @@ function essential_programs() {
 
 
     echo_wait "Installing Calibre Library..."
-    sudo -v && wget -nv -o- https://download.calibre-ebook.com/linux-installer.sh | sudo sh /dev/stdin
+    sudo -v && wget -nv -O- https://download.calibre-ebook.com/linux-installer.sh | sudo sh /dev/stdin
 
     install_yacreader
     
@@ -152,9 +157,7 @@ function setup_kvm() {
 function appearance_tools() {
     if (( IS_DESKTOP == 1 ));
     then
-	sudo apt install lightdm gnome-tweaks gnome-shell-extensions -y
-	sudo apt install chrome-gnome-shell -y
-	sudo apt install dconf-editor -y
+        sudo apt install dconf-editor -y
 
     fi
     
@@ -162,8 +165,8 @@ function appearance_tools() {
 
     if (( IS_HEADLESS_SERVER != 1 ));
     then
-	sudo apt install paper-icon-theme arc-theme -y
-	sudo apt install variety -y
+        sudo apt install paper-icon-theme arc-theme -y
+        sudo apt install variety -y
     fi
 
 }
@@ -192,38 +195,6 @@ function install_text_editors() {
     sudo apt install neovim -y
     install_emacs
 
-}     
-
-
-function install_emacs_debian() {
-    mkdir -p "$TEMP_DOWNLOAD_PATH"
-    cd_or_exit "$TEMP_DOWNLOAD_PATH"
-
-    download_link="https://drive.google.com/uc?export=download&id=1y7puzujXcqpueSkZxiDrMXAX4-8EC6IO"
-    file_name="emacs30_30.0.5-1_native-comp_2023-04-11_amd64.deb"
-
-    
-    if (( IS_MEDIA_SERVER == 1 ));
-    then
-        # Install Python just in case
-        python_tools
-    fi
-    
-    "$HOME_PATH/.local/bin/gdown" "$download_link"
-
-    
-    if [[ ! -f "$file_name" ]]
-    then
-        echo "Cannot download Emacs Debian. Aborting."
-        return
-    else
-        sudo dpkg -i "$TEMP_DOWNLOAD_PATH/$file_name"
-        sudo apt install --fix-broken
-        echo "Complete!"
-    fi
-
-    # Now return
-    cd_or_exit "$CURRENT_PATH"
 }
 
 function install_emacs_dependencies() {
@@ -237,81 +208,79 @@ function install_emacs_dependencies() {
 
 }
 
-function compile_emacs_from_source() {
-    mkdir -p "$TEMP_DOWNLOAD_PATH"
 
-    cd_or_exit "$TEMP_DOWNLOAD_PATH"
-    # cd "$TEMP_DOWNLOAD_PATH"
-
-    mkdir -p "$TEMP_DOWNLOAD_PATH/EMACS"
-    cd_or_exit "$TEMP_DOWNLOAD_PATH/EMACS"
-
-    git clone https://git.savannah.gnu.org/git/emacs.git
-    
-    mkdir -p "build" && cd_or_exit "build"
-    
-    # Call autogen:
-    ../emacs/autogen.sh
-
-    # Now call configure here:
-    ../emacs/configure --with-mailutils --with-json --with-native-compilation --with-x --with-xwidgets --with-imagemagick
-
-
-    # Now make it
-    (make -j4 && sudo make install) || (echo "Could not make emacs. Aborting.")
-
-    # Now return to the original path
+function install_emacs_debian() {
     cd_or_exit "$CURRENT_PATH"
-    # cd "$CURRENT_PATH"
    
+    if [[ ! -d "$CURRENT_PATH/debians" ]]
+    then
+        echo "Error: The ${CURRENT_PATH}/debians directory does not exist."
+        return 0
+    fi
+
+    if [[ ! -f "$CURRENT_PATH/debians/$LOCAL_EMACS_FILENAME" ]]
+    then
+        echo "Error: ${CURRENT_PATH}/debians does not contain a $LOCAL_EMACS_FILENAME to install emacs."
+        return 0
+    fi
+
+
+    sudo dpkg -i "$CURRENT_PATH/debians/$LOCAL_EMACS_FILENAME"
+    
+    installation_result=$(sudo apt install --fix-broken)
+    
+    if (( installation_result != 0 ))
+    then
+        echo "Error: Some issue occurred while installing the emacs debian."
+        echo "You may need to investigate this on your own."
+    else
+        echo "Complete!"
+    fi
+      
+    # Now return
+    cd_or_exit "$CURRENT_PATH"
 }
 
+
+
 function install_emacs() {
-    echo "First installing Dependencies."
+    echo_wait "First installing Dependencies."
     install_emacs_dependencies
 
 
-    read -r -n2 -p "Do you want me to install emacs through a personal debian file? [y/n]" user_input
+    read -r -n2 -p "Do you want me to install emacs through a personal debian file? [y/n] " user_input
     if [[ $user_input =~ [yY] ]]
     then
         install_emacs_debian
     else
-        read -r -n2 -p "How about installing the default emacs for your distribution? [y/n]" user_input
+        read -r -n2 -p "How about installing the default emacs for your distribution? [y/n] " user_input
         
         if [[ $user_input =~ [yY] ]]
         then
             echo "Alright then, It shouldn't take long."
             sudo apt install emacs -y
         else
-            read -r -n2 -p "How about compiling it from source? [y/n] " user_input
-
-            if [[ $user_input =~ [yY] ]]
-            then
-                compile_emacs_from_source
-            else
-                echo "Alright, you're on your own then."
-            fi
-            
+            echo "Alright, you're on your own then."
         fi
+            
     fi
-
     # Now return back to CURRENT_PATH just in case:
     cd_or_exit "$CURRENT_PATH"
 }
 
     
 
-function golang-tools() {
+function install_golang() {
     sudo add-apt-repository ppa:longsleep/golang-backports -y
     sudo apt update
     sudo apt install golang-go -y
            
 }
 
-function java_tools() {
+function install_java() {
     for i in "${JAVA_VERSION_LIST[@]}"
     do
-	sudo apt install "openjdk-${i}-jdk" -y
+        sudo apt install "openjdk-${i}-jdk" -y
     done
 
     sudo apt install libderby-java -y
@@ -319,20 +288,8 @@ function java_tools() {
 
 }
 
-function javascript_tools() {
-    # For more information, go to
-    # https://github.com/nodesource/distributions/blob/master/README.md
-    mkdir -p "$TEMP_DOWNLOAD_PATH"
-    cd_or_exit "$TEMP_DOWNLOAD_PATH"
-       
-    curl -sL "https://deb.nodesource.com/setup_${NODE_VERSION}.x" -o nodesource_setup.sh
-    chmod +x ./nodesource_setup.sh
-    sudo ./nodesource_setup.sh
-    
-    sudo apt install nodejs -y
-
-    cd_or_exit "$CURRENT_PATH"
-
+function install_javascript() {
+    sudo snap install node
 }
 
 function install_googletest() {
@@ -352,9 +309,9 @@ function install_googletest() {
 
     # Now return
     cd_or_exit "$CURRENT_PATH"
-}    
+}
 
-function cpp_tools {    
+function install_cpp {
     sudo add-apt-repository ppa:ubuntu-toolchain-r/test -y
     sudo apt install "g++-${GCC_VERSION}" "gcc-${GCC_VERSION}" -y
 
@@ -381,7 +338,7 @@ function cpp_tools {
     install_googletest
 }
 
-function php_tools() {
+function install_php() {
     # Repo for PHP:
     sudo apt install software-properties-common -y
     sudo add-apt-repository ppa:ondrej/php -y
@@ -397,7 +354,7 @@ function php_tools() {
 }
 
 
-function csharp_tools() {
+function install_csharp() {
     # First, cd to ~/:
     cd "$TEMP_DOWNLOAD_PATH" || (echo "Some error occurred in csharp_tools." && exit 1)
   
@@ -412,17 +369,17 @@ function csharp_tools() {
     sudo apt install "dotnet-sdk-${DOT_NET_VERSION}" -y
 
 
-    cd_or_exit "$HOME_PATH"
+    cd_or_exit "$CURRENT_PATH"
     # cd "$HOME_PATH"
 
 }
 
-function python_tools() {
+function install_python() {
     sudo apt install python3-pip -y
-    sudo apt install python3-venv -y
+    sudo apt install python3-venv python-is-python3 -y
 
     # Establish python lsp server
-    python3 -m pip install --user python-lsp-server
+    python3 -m pip install --user python-lsp-server[all]
 
     # Symlink pylsp to pyls in order for lsp-mode to locate it.
     # You may need to change this in the future.
@@ -439,54 +396,63 @@ function python_tools() {
 
 }
 
-function sql_tools() {
+function install_rust() {
+    sudo apt install rust-all -y
+
+}
+
+
+function install_sql() {
 
     sudo apt install mariadb-server -y
     sudo apt install "postgresql-${POSTGRES_VERSION}" -y
-    sudo apt install pgadmin3 -y
 
     # Now install mysql workbench:
     sudo snap install mysql-workbench-community
 }
 
 
+function install_misc_programming() {
+      # Racket
+      sudo apt install racket -y
+
+      # Static Analyzer for bash
+      sudo apt install shellcheck -y
+
+}
+
 
 function programming_tools() {
     echo_wait "Now installing some Programming libraries and tools."
-    # C/C++
-    cpp_tools
 
-    # C#
-    csharp_tools
-
-    # Golang
-    golang-tools
-    
-    # Java
-    java_tools
-
-    # JavaScript
-    javascript_tools
-      
-    # PHP
-    php_tools
-
-    # Python
-    python_tools
-       
-    # Racket
-    sudo apt install racket -y
-
-    # Static Analyzer for bash
-    sudo apt install shellcheck -y
-
-    # SQL
-    sql_tools
-
-    
     # Text Editors
     install_text_editors
+    
+    # C/C++
+    install_cpp
 
+    # C#
+    install_csharp
+
+    # Golang
+    install_golang
+    
+    # Java
+    install_java
+
+    # JavaScript
+    install_javascript
+      
+    # PHP
+    install_php
+
+    # Python
+    install_python
+
+    install_misc_programming
+
+    # SQL
+    install_sql
 
     # Just to make sure, return back to your current path:
     cd_or_exit "$CURRENT_PATH"
@@ -496,8 +462,8 @@ function programming_tools() {
 # Additional Tools
 # ------------------------------------------------------------------------------
 
-function audiovisual_tools() {
-    echo_wait "Installing some more tools..."
+function multimedia_tools() {
+    echo_wait "Installing some multimedia, multimedia editing, and recording software..."
     
     if (( IS_DESKTOP == 1 ));
     then
@@ -505,8 +471,9 @@ function audiovisual_tools() {
         sudo apt install audacity -y
         sudo apt install gimp -y
         sudo apt install easytag -y
-	sudo add-apt-repository ppa:obsproject/obs-studio -y
-	sudo apt-get install obs-studio -y	
+
+        sudo add-apt-repository ppa:obsproject/obs-studio -y
+        sudo apt-get install obs-studio -y
     fi
 
 
@@ -515,13 +482,18 @@ function audiovisual_tools() {
 }
 
 function install_yacreader() {
-    echo 'deb http://download.opensuse.org/repositories/home:/selmf/xUbuntu_22.04/ /' | sudo tee /etc/apt/sources.list.d/home:selmf.list
-    curl -fsSL https://download.opensuse.org/repositories/home:selmf/xUbuntu_22.04/Release.key | gpg --dearmor | sudo tee /etc/apt/trusted.gpg.d/home_selmf.gpg > /dev/null
-    sudo apt update
-    sudo apt install yacreader -y
+    if (( IS_VALID_UBUNTU_VERSION == 1 ))
+    then
+        echo_wait "Installing Yacreader:"
+    
+        echo 'deb http://download.opensuse.org/repositories/home:/selmf/xUbuntu_22.04/ /' | sudo tee /etc/apt/sources.list.d/home:selmf.list
+        curl -fsSL https://download.opensuse.org/repositories/home:selmf/xUbuntu_22.04/Release.key | gpg --dearmor | sudo tee /etc/apt/trusted.gpg.d/home_selmf.gpg > /dev/null
+        sudo apt update
+        sudo apt install yacreader -y
+    fi
 }
 
-function manual_debians() {
+function install_manual_debian_files() {
     echo_wait "Now downloading and installing some .deb files that have to be installed manually."
     
     # Create the download path if it exists.
@@ -534,8 +506,13 @@ function manual_debians() {
         # Discord
         wget -O "discord-recent-version.deb" "https://discord.com/api/download?platform=linux&format=deb"
 
-        # Strawberry
-        wget "https://files.strawberrymusicplayer.org/strawberry_1.0.5-jammy_amd64.deb"
+
+
+        if (( IS_VALID_UBUNTU_VERSION == 1 ))
+        then
+            # Strawberry            
+            wget "https://files.strawberrymusicplayer.org/strawberry_1.0.5-jammy_amd64.deb"
+        fi
 
         # Minecraft
         wget "https://launcher.mojang.com/download/Minecraft.deb"
@@ -597,12 +574,12 @@ function manual_debians() {
 function vidya() {
     echo_wait "Now installing Steam and some emulators!"
     if (( IS_DESKTOP == 1 || IS_MEDIA_SERVER == 1));
-    then	
-	sudo apt install steam-installer -y        
+    then        
+        sudo apt install steam-installer -y        
         sudo add-apt-repository ppa:pcsx2-team/pcsx2-daily -y
         sudo apt update
         sudo apt install pcsx2-unstable -y
-	
+        
     fi
 
     if (( IS_DESKTOP == 1 ));
@@ -638,6 +615,7 @@ function snap_ides() {
 
 # Handles applications that can run through the command line.
 function snap_applications() {
+    sudo snap install node --classic
     if (( IS_DESKTOP == 1 ));
     then
         sudo snap install bitwarden
@@ -662,15 +640,15 @@ function install_and_configure_plex() {
     echo_wait "Now installing Plex."
     cd_or_exit "$TEMP_DOWNLOAD_PATH"
 
-    wget "https://downloads.plex.tv/plex-media-server-new/${PLEX_VERISON}/debian/plexmediaserver_${PLEX_VERISON}_amd64.deb"
+    wget "https://downloads.plex.tv/plex-media-server-new/${PLEX_VERSION_NUMBER}/debian/plexmediaserver_${PLEX_VERSION_NUMBER}_amd64.deb"
 
-    if [[ ! -f "plexmediaserver_${PLEX_VERISON}_amd64.deb" ]]
+    if [[ ! -f "plexmediaserver_${PLEX_VERSION_NUMBER}_amd64.deb" ]]
     then
-        echo "Error: Could not download plexmediaserver_${PLEX_VERISON}_amd64.deb. Aborting."
+        echo "Error: Could not download plexmediaserver_${PLEX_VERSION_NUMBER}_amd64.deb. Aborting."
         return        
     fi
 
-    sudo dpkg -i "plexmediaserver_${PLEX_VERISON}_amd64.deb"
+    sudo dpkg -i "plexmediaserver_${PLEX_VERSION_NUMBER}_amd64.deb"
     
     echo_wait "Now Configuring Plex:"
     sudo usermod -a -G "$USERNAME" "$PLEX_USERNAME"
@@ -743,14 +721,17 @@ function desktop_installation() {
     
     graphic_drivers
     essential_programs
-    appearance_tools
-    programming_tools
-    audiovisual_tools
     brave_browser
+    
+    appearance_tools    
+    programming_tools
+    multimedia_tools
+   
     vidya
     snap_ides
     snap_applications
-    manual_debians
+    
+    install_manual_debian_files
     install_fcron
     increase_swap_size
 }
@@ -763,7 +744,8 @@ function media_server_installation() {
     graphic_drivers
     essential_programs
     appearance_tools
-    audiovisual_tools
+    
+    multimedia_tools
     programming_tools
 
     vidya    
@@ -785,15 +767,34 @@ function headless_server_installation() {
 
 }    
 
-# Check if the OS is a Ubuntu derived Linux distribution using python's platform module.
-# Will exit if the machine fails the check.
-function check_ubuntu_distribution() {
-    # Use grep to search for Ubuntu or Debian in the output of distro or platform.
-    (python3 -m distro | grep -io -e "ubuntu"  >/dev/null && print_menu) ||
-	(python -m platform | grep -io -e "ubuntu" > /dev/null && print_menu) ||
-	(echo "This shell script will only work on a Ubuntu Distribution." && exit 1)
 
+
+# Check if the script can be run successfully on the current OS. This requires a Ubuntu
+# Distribution set to a specific release version. The Program will exit if the OS is not
+# a Ubuntu Distribution.
+
+function verify_ubuntu_distribution() {
+    distribution_name=$(lsb_release -i | awk -F ' ' '{print $3;}')
+    release_version=$(lsb_release -i | xargs | awk -F ' ' '{print $2; }')
+
+    if [[ "$distribution_name" != "Ubuntu" ]]
+    then
+        echo_wait "Error: This script will only work on an Ubuntu Distribution. This program will now exit."
+        exit 1
+    fi
+
+
+    if [[ "$release_version" != "$INTENDED_UBUNTU_VERSION" ]]
+    then
+        echo_wait "Warning: This script is intended to be run on Ubuntu ${INTENDED_UBUNTU_VERSION}."
+        echo_wait "Since it may not work on your version (${release_version}), programs that depend on a ${INTENDED_UBUNTU_VERSION} release will not be installed."
+        IS_VALID_UBUNTU_VERSION=0
+    fi
+
+    display_main_menu
+    
 }
+
 
 function swap_caps_lock_and_ctrl() {
     echo_wait "Now Swapping Caps Lock and Control by modifying /etc/default/keyboard..."
@@ -820,7 +821,7 @@ function swap_caps_lock_and_ctrl() {
 
 }
 
-function print_menu() {
+function display_main_menu() {
     echo "The Current Time is $(date +'%m/%d/%Y %H:%M')"    
     print_dashed_line
     echo "Ubuntu Reinstallation (Version $VERSION_NUMBER)"
@@ -839,8 +840,8 @@ function print_menu() {
     
     while ! [[ $user_input =~ $re ]];
     do
-	echo ""
-	read -rp "Invalid Input. Please enter a option: " -n1 user_input
+        echo ""
+        read -rp "Invalid Input. Please enter a option: " -n1 user_input
     done
 
     # Lowercase input:
@@ -850,20 +851,20 @@ function print_menu() {
        
     if [ "$user_input" == "a" ];
     then
-	desktop_installation
+        desktop_installation
     elif [ "$user_input" == "b" ];
     then
-	IS_DESKTOP=0
+        IS_DESKTOP=0
         IS_MEDIA_SERVER=1
         media_server_installation
     elif [[ "$user_input" == "c" ]];
     then
-	IS_DESKTOP=0
-	IS_HEADLESS_SERVER=1
-	headless_server_installation
+        IS_DESKTOP=0
+        IS_HEADLESS_SERVER=1
+        headless_server_installation
     else
-	echo "Exiting..."
-	exit
+        echo "Exiting..."
+        exit
     fi
     
     swap_caps_lock_and_ctrl
@@ -872,4 +873,4 @@ function print_menu() {
 # ------------------------------------------------------------------------------
 # Now run the script:
 # ------------------------------------------------------------------------------
-check_ubuntu_distribution
+verify_ubuntu_distribution
