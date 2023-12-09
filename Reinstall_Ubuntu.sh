@@ -32,16 +32,16 @@ IS_MEDIA_SERVER=0
 IS_HEADLESS_SERVER=0
 IS_VALID_UBUNTU_VERSION=1
 
-
 CLANG_VERSION="15"
-DOT_NET_VERSION="6.0"
+DOT_NET_VERSION="7.0"
 GCC_VERSION="13"
+
 INTENDED_UBUNTU_VERSION="22.04"
 JAVA_VERSION_LIST=('8' '11' '18')
 LOCAL_EMACS_FILENAME="emacs30_30.0.5-1_amd64-2023-09-26.deb"
 PHP_VERSION="8.1"
 PLEX_USERNAME="plex"
-PLEX_VERSION_NUMBER="1.32.4.7195-7c8f9d3b6"
+PLEX_VERSION_NUMBER="1.32.8.7639-fb6452ebf"
 POSTGRES_VERSION="14"
 VNC_VERSION="7.5.1"
 
@@ -126,7 +126,7 @@ function essential_programs() {
     sudo apt install nmap -y
 
     sudo apt install webp-pixbuf-loader -y
-
+    sudo apt install keepassxc -y
     sudo apt install espeak -y
     sudo apt install speedtest-cli -y
     sudo apt install gnucash -y
@@ -389,6 +389,7 @@ function install_python() {
 
     python3 -m pip install gdown
     python3 -m pip install jupyterlab
+    python3 -m pip install notebook
     python3 -m pip install ipython
     python3 -m pip install numpy
     python3 -m pip install ipdb
