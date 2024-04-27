@@ -727,8 +727,8 @@ function desktop_installation() {
     multimedia_tools
    
     vidya
-    snap_ides
-    snap_applications
+    #snap_ides
+    #snap_applications
     
     install_manual_debian_files
     install_fcron
