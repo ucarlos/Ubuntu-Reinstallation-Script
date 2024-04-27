@@ -101,7 +101,7 @@ function essential_programs() {
            sudo apt install deja-dup duplicity mpv -y
            sudo apt install gnome-disk-utility -y
            sudo apt install hexchat filezilla -y
-           sudo apt install nautlius -y
+           sudo apt install nautlius -y # BROKEN
            sudo apt install qbittorrent -y
            sudo apt install usb-creator-gtk -y
            sudo apt install libreoffice -y
@@ -149,7 +149,9 @@ function essential_programs() {
 
 function setup_kvm() {
     # First, install the requirements:
-    sudo apt install qemu qemu-kvm libvirt-daemon-system libvirt-clients bridge-utils virtinst virt-manager -y
+
+    # qemu is BROKEN
+    #sudo apt install qemu qemu-kvm libvirt-daemon-system libvirt-clients bridge-utils virtinst virt-manager -y
     
     # Next, set up any additional permissions here:
     sudo systemctl enable libvirtd
@@ -200,9 +202,14 @@ function install_text_editors() {
 }
 
 function install_emacs_dependencies() {
+
+    # https://github.com/ucarlos/Ubuntu-Reinstallation-Script.git
+    
     sudo apt install libjansson-dev "libgccjit-${GCC_VERSION}-dev" -y
     sudo apt install libclang-dev clangd-"${CLANG_VERSION}" -y
-    sudo apt install libwebkit2gtk-4.0-dev -y
+
+
+    # sudo apt install libwebkit2gtk-4.0-dev -y # BROKEN
     sudo apt install libjpeg-dev libtiff-dev libncurses-dev texinfo libxpm-dev libwebp-dev -y
     sudo apt install libmagickcore-dev libmagick++-dev -y
     sudo apt install mailutils -y
@@ -273,10 +280,10 @@ function install_emacs() {
     
 
 function install_golang() {
-    sudo add-apt-repository ppa:longsleep/golang-backports -y
-    sudo apt update
-    sudo apt install golang-go -y
-           
+    #sudo add-apt-repository ppa:longsleep/golang-backports -y
+    #sudo apt update
+    #sudo apt install golang-go -y
+    echo "THIS IS BROKEN"
 }
 
 function install_java() {
@@ -296,19 +303,21 @@ function install_javascript() {
 
 function install_googletest() {
     
-    mkdir -p "$TEMP_DOWNLOAD_PATH"
-    cd_or_exit "$TEMP_DOWNLOAD_PATH"
+    #mkdir -p "$TEMP_DOWNLOAD_PATH"
+    #cd_or_exit "$TEMP_DOWNLOAD_PATH"
     # cd "$TEMP_DOWNLOAD_PATH"
     
     # Clone and build googletest.
-    git clone https://github.com/google/googletest.git
-    cmake .
-    make
+    #git clone https://github.com/google/googletest.git
+    #cmake .
+    #make
 
     # I would recommend using checkinstall manually to install this,
     # but you can also just do sudo make install at your peril.
-    sudo make install
+    #sudo make install
 
+
+    echo "THIS NEEDS TO BE REPLACED!"
     # Now return
     cd_or_exit "$CURRENT_PATH"
 }
@@ -324,7 +333,6 @@ function install_cpp {
     sudo apt install "libstdc++-${GCC_VERSION}-dev" -y
     sudo apt install "clang-${CLANG_VERSION}" -y
     sudo apt install valgrind -y
-    sudo apt install cppman -y
     
     sudo apt install libpqxx-dev libmysql++-dev -y
     cppman --cache-all &
@@ -408,7 +416,8 @@ function install_rust() {
 function install_sql() {
 
     sudo apt install mariadb-server -y
-    sudo apt install "postgresql-${POSTGRES_VERSION}" -y
+    # THIS NEEDS TO BE UPDATED
+    #sudo apt install "postgresql-${POSTGRES_VERSION}" -y
 
     # Now install mysql workbench:
     sudo snap install mysql-workbench-community
@@ -510,14 +519,15 @@ function install_manual_debian_files() {
         if (( IS_VALID_UBUNTU_VERSION == 1 ))
         then
             # Strawberry            
-            wget "https://files.strawberrymusicplayer.org/strawberry_1.0.5-jammy_amd64.deb"
+            #wget "https://files.strawberrymusicplayer.org/strawberry_1.0.5-jammy_amd64.deb"
+            echo "THIS NEEDS TO BE UPDATED!"
         fi
 
         # Minecraft
         wget "https://launcher.mojang.com/download/Minecraft.deb"
 
         # TeamViewer:
-        wget "https://download.teamviewer.com/download/linux/teamviewer_amd64.deb"
+        #wget "https://download.teamviewer.com/download/linux/teamviewer_amd64.deb" THIS IS BROKEN
         
     fi
 
@@ -575,9 +585,9 @@ function vidya() {
     if (( IS_DESKTOP == 1 || IS_MEDIA_SERVER == 1));
     then        
         sudo apt install steam-installer -y        
-        sudo add-apt-repository ppa:pcsx2-team/pcsx2-daily -y
+        #sudo add-apt-repository ppa:pcsx2-team/pcsx2-daily -y -- THIS NEEDS TO BE REPLACED
         sudo apt update
-        sudo apt install pcsx2-unstable -y
+        #sudo apt install pcsx2-unstable -y -- THIS NEEDS TO REPLACED
         
     fi
 
