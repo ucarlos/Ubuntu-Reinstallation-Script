@@ -116,6 +116,7 @@ function essential_programs() {
     sudo apt install texlive-latex-recommended -y
     sudo apt install ttf-mscorefonts-installer -y
     sudo apt install openssh-server -y
+    sudo apt install flatpak -y
     
     sudo apt install curl -y
     sudo apt install checkinstall -y
@@ -485,12 +486,8 @@ function multimedia_tools() {
 function install_yacreader() {
     if (( IS_VALID_UBUNTU_VERSION == 1 ))
     then
-        echo_wait "Installing Yacreader:"
-    
-        echo 'deb http://download.opensuse.org/repositories/home:/selmf/xUbuntu_22.04/ /' | sudo tee /etc/apt/sources.list.d/home:selmf.list
-        curl -fsSL https://download.opensuse.org/repositories/home:selmf/xUbuntu_22.04/Release.key | gpg --dearmor | sudo tee /etc/apt/trusted.gpg.d/home_selmf.gpg > /dev/null
-        sudo apt update
-        sudo apt install yacreader -y
+        echo_wait "Installing Yacreader..."
+        sudo flatpak install YACReader
     fi
 }
 
