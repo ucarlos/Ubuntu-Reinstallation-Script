@@ -12,8 +12,9 @@
 # Note:
 # This installation script is meant to be used in a Ubuntu Distribution.
 #
+# TODO: Possibly Replace this with a Python Script as some point?
 # ------------------------------------------------------------------------------
-
+#
 
 # ------------------------------------------------------------------------------
 # Global Variables
@@ -33,17 +34,16 @@ IS_MEDIA_SERVER=0
 IS_HEADLESS_SERVER=0
 IS_VALID_UBUNTU_VERSION=1
 
-CLANG_VERSION="15"
-DOT_NET_VERSION="7.0"
-GCC_VERSION="13"
+CLANG_VERSION="18"
+DOT_NET_VERSION="8.0"
+GCC_VERSION="14"
 
-INTENDED_UBUNTU_VERSION="22.04"
-JAVA_VERSION_LIST=('8' '11' '18')
+INTENDED_UBUNTU_VERSION="24.04"
+JAVA_VERSION_LIST=('8' '11' '21')
 LOCAL_EMACS_FILENAME="emacs30_30.0.5-1_amd64-2023-09-26.deb"
-PHP_VERSION="8.1"
 PLEX_USERNAME="plex"
 PLEX_VERSION_NUMBER="1.32.8.7639-fb6452ebf"
-POSTGRES_VERSION="14"
+POSTGRES_VERSION="16"
 VNC_VERSION="7.5.1"
 
 
@@ -101,7 +101,6 @@ function essential_programs() {
            sudo apt install deja-dup duplicity mpv -y
            sudo apt install gnome-disk-utility -y
            sudo apt install hexchat filezilla -y
-           sudo apt install nautlius -y # BROKEN
            sudo apt install qbittorrent -y
            sudo apt install usb-creator-gtk -y
            sudo apt install libreoffice -y
@@ -118,6 +117,7 @@ function essential_programs() {
     sudo apt install ttf-mscorefonts-installer -y
     sudo apt install openssh-server -y
     sudo apt install flatpak -y
+    sudo flatpak remote-add --if-not-exists flathub https://flathub.org/repo/flathub.flatpakrepo
     
     sudo apt install curl -y
     sudo apt install checkinstall -y
@@ -131,7 +131,6 @@ function essential_programs() {
     sudo apt install keepassxc -y
     sudo apt install espeak -y
     sudo apt install speedtest-cli -y
-    sudo apt install gnucash -y
 
 
     if (( IS_DESKTOP == 1 ));
@@ -150,8 +149,7 @@ function essential_programs() {
 function setup_kvm() {
     # First, install the requirements:
 
-    # qemu is BROKEN
-    #sudo apt install qemu qemu-kvm libvirt-daemon-system libvirt-clients bridge-utils virtinst virt-manager -y
+    sudo apt install qemu-system qemu-kvm libvirt-daemon-system libvirt-clients bridge-utils virtinst virt-manager -y
     
     # Next, set up any additional permissions here:
     sudo systemctl enable libvirtd
@@ -209,7 +207,7 @@ function install_emacs_dependencies() {
     sudo apt install libclang-dev clangd-"${CLANG_VERSION}" -y
 
 
-    # sudo apt install libwebkit2gtk-4.0-dev -y # BROKEN
+    sudo apt install libwebkit2gtk-4.1-dev libwebkit2gtk-6.0-dev -y
     sudo apt install libjpeg-dev libtiff-dev libncurses-dev texinfo libxpm-dev libwebp-dev -y
     sudo apt install libmagickcore-dev libmagick++-dev -y
     sudo apt install mailutils -y
@@ -280,10 +278,7 @@ function install_emacs() {
     
 
 function install_golang() {
-    #sudo add-apt-repository ppa:longsleep/golang-backports -y
-    #sudo apt update
-    #sudo apt install golang-go -y
-    echo "THIS IS BROKEN"
+    sudo apt install golang -y
 }
 
 function install_java() {
@@ -302,24 +297,7 @@ function install_javascript() {
 }
 
 function install_googletest() {
-    
-    #mkdir -p "$TEMP_DOWNLOAD_PATH"
-    #cd_or_exit "$TEMP_DOWNLOAD_PATH"
-    # cd "$TEMP_DOWNLOAD_PATH"
-    
-    # Clone and build googletest.
-    #git clone https://github.com/google/googletest.git
-    #cmake .
-    #make
-
-    # I would recommend using checkinstall manually to install this,
-    # but you can also just do sudo make install at your peril.
-    #sudo make install
-
-
-    echo "THIS NEEDS TO BE REPLACED!"
-    # Now return
-    cd_or_exit "$CURRENT_PATH"
+    sudo apt install googletest -y
 }
 
 function install_cpp {
@@ -335,7 +313,6 @@ function install_cpp {
     sudo apt install valgrind -y
     
     sudo apt install libpqxx-dev libmysql++-dev -y
-    cppman --cache-all &
     
     sudo apt install libboost-all-dev -y
     sudo apt install cmake -y
@@ -349,18 +326,9 @@ function install_cpp {
 }
 
 function install_php() {
-    # Repo for PHP:
-    sudo apt install software-properties-common -y
-    sudo add-apt-repository ppa:ondrej/php -y
-
-    # If using apache, do this:
-    # sudo apt update
-    # sudo apt install php8.0 libapache2-mod-php8.0
-    # For more information, go to https://linuxize.com/post/how-to-install-php-8-on-ubuntu-20-04/
+    # For now, we'll just install the default version of PHP -- Which is 8.3
+    sudo apt install php -y
     
-    sudo apt install "php${PHP_VERSION}-dev" -y
-    sudo apt install "php${PHP_VERSION}-*" -y
-
 }
 
 
@@ -417,7 +385,7 @@ function install_sql() {
 
     sudo apt install mariadb-server -y
     # THIS NEEDS TO BE UPDATED
-    #sudo apt install "postgresql-${POSTGRES_VERSION}" -y
+    sudo apt install "postgresql-${POSTGRES_VERSION}" -y
 
     # Now install mysql workbench:
     sudo snap install mysql-workbench-community
@@ -497,7 +465,7 @@ function install_yacreader() {
     if (( IS_VALID_UBUNTU_VERSION == 1 ))
     then
         echo_wait "Installing Yacreader..."
-        sudo flatpak install YACReader
+        sudo flatpak install YACReader -y
     fi
 }
 
@@ -514,20 +482,16 @@ function install_manual_debian_files() {
         # Discord
         wget -O "discord-recent-version.deb" "https://discord.com/api/download?platform=linux&format=deb"
 
-
-
         if (( IS_VALID_UBUNTU_VERSION == 1 ))
         then
             # Strawberry            
             #wget "https://files.strawberrymusicplayer.org/strawberry_1.0.5-jammy_amd64.deb"
-            echo "THIS NEEDS TO BE UPDATED!"
+            # THIS IS CURRENTLY BROKEN AND NEEDS TO BE UPDATED AT SOME POINT
+            echo "STRAWBERRY IS CURRENTLY BROKEN -- THIS NEEDS TO BE UPDATED!"
         fi
 
         # Minecraft
         wget "https://launcher.mojang.com/download/Minecraft.deb"
-
-        # TeamViewer:
-        #wget "https://download.teamviewer.com/download/linux/teamviewer_amd64.deb" THIS IS BROKEN
         
     fi
 
@@ -561,15 +525,7 @@ function install_manual_debian_files() {
     # ProtonVPN
     # --------------------------------------
     
-    wget "https://repo.protonvpn.com/debian/dists/stable/main/binary-all/protonvpn-stable-release_1.0.3-2_all.deb"
-
-    checksum_result=$(echo "c68a0b8dad58ab75080eed7cb989e5634fc88fca051703139c025352a6ee19ad  protonvpn-stable-release_1.0.3-2_all.deb" | sha256sum --check -)
-    if [[ "$checksum_result" != "protonvpn-stable-release_1.0.3-2_all.deb: OK" ]];
-    then
-        echo "Checksum for ProtonVPN Debian doesn't check out; Deleting file."
-        rm -v "protonvpn-stable-release_1.0.3-2_all.deb"
-    fi
-
+    wget "https://repo2.protonvpn.com/debian/dists/stable/main/binary-all/protonvpn-stable-release_1.0.3-3_all.deb"
 
     # --------------------------------------
     # Now install each .deb file:
@@ -585,16 +541,16 @@ function vidya() {
     if (( IS_DESKTOP == 1 || IS_MEDIA_SERVER == 1));
     then        
         sudo apt install steam-installer -y        
-        #sudo add-apt-repository ppa:pcsx2-team/pcsx2-daily -y -- THIS NEEDS TO BE REPLACED
+        sudo add-apt-repository ppa:pcsx2-team/pcsx2-daily -y
         sudo apt update
-        #sudo apt install pcsx2-unstable -y -- THIS NEEDS TO REPLACED
+        sudo apt install pcsx2-unstable -y
         
     fi
 
     if (( IS_DESKTOP == 1 ));
        then
            sudo add-apt-repository ppa:libretro/stable -y
-           sudo apt install libretro-* -y
+           #sudo apt install libretro-* -y # MAME and MESS are currently BROKEN
            sudo apt install retroarch -y
     fi
 
