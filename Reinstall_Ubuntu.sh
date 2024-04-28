@@ -485,9 +485,7 @@ function install_manual_debian_files() {
         if (( IS_VALID_UBUNTU_VERSION == 1 ))
         then
             # Strawberry            
-            #wget "https://files.strawberrymusicplayer.org/strawberry_1.0.5-jammy_amd64.deb"
-            # THIS IS CURRENTLY BROKEN AND NEEDS TO BE UPDATED AT SOME POINT
-            echo "STRAWBERRY IS CURRENTLY BROKEN -- THIS NEEDS TO BE UPDATED!"
+            sudo flatpak install flathub org.strawberrymusicplayer.strawberry -y
         fi
 
         # Minecraft
