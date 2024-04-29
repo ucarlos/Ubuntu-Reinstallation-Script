@@ -99,20 +99,14 @@ function essential_programs() {
        then
            sudo apt install deja-dup duplicity mpv -y
            sudo apt install gnome-disk-utility -y
-           sudo apt install hexchat filezilla -y
            sudo apt install qbittorrent -y
            sudo apt install usb-creator-gtk -y
-           sudo apt install libreoffice -y
-           sudo apt install thunderbird -y
-           sudo apt install baobab eog gnome-system-monitor evince -y
     fi
     
     sudo apt install htop btop git -y
     sudo apt install tmux gedit net-tools -y
     sudo apt install fdupes -y
     sudo apt install neofetch screenfetch -y
-    sudo apt install texlive-latex-base texlive-latex-extra -y
-    sudo apt install texlive-latex-recommended -y
     sudo apt install ttf-mscorefonts-installer -y
     sudo apt install openssh-server -y
     sudo apt install flatpak -y
@@ -127,22 +121,26 @@ function essential_programs() {
     sudo apt install nmap -y
 
     sudo apt install webp-pixbuf-loader -y
-    sudo apt install keepassxc -y
-    sudo apt install espeak -y
     sudo apt install speedtest-cli -y
 
 
     if (( IS_DESKTOP == 1 ));
-    then        
+    then
+        sudo apt install thunderbird -y        
+        sudo apt install hexchat filezilla -y
+        sudo apt install texlive-latex-base texlive-latex-extra -y
+        sudo apt install texlive-latex-recommended -y
+        sudo apt install keepassxc -y
+        sudo apt install libreoffice -y
+        sudo apt install baobab eog gnome-system-monitor evince -y        
+        sudo apt install espeak -y        
         setup_kvm
+
+        echo_wait "Installing Calibre Library..."
+        sudo -v && wget -nv -O- https://download.calibre-ebook.com/linux-installer.sh | sudo sh /dev/stdin
+
+        install_yacreader
     fi
-
-
-    echo_wait "Installing Calibre Library..."
-    sudo -v && wget -nv -O- https://download.calibre-ebook.com/linux-installer.sh | sudo sh /dev/stdin
-
-    install_yacreader
-    
 }    
 
 function setup_kvm() {
@@ -447,11 +445,8 @@ function multimedia_tools() {
 }
 
 function install_yacreader() {
-    if (( IS_VALID_UBUNTU_VERSION == 1 ))
-    then
-        echo_wait "Installing Yacreader..."
-        sudo flatpak install YACReader -y
-    fi
+    echo_wait "Installing Yacreader..."
+    sudo flatpak install YACReader -y
 }
 
 function install_manual_debian_files() {
@@ -694,6 +689,7 @@ function media_server_installation() {
     appearance_tools
     
     multimedia_tools
+    install_java
     install_emacs
 
     vidya    
