@@ -20,7 +20,7 @@
 # Global Variables
 # ------------------------------------------------------------------------------
 
-VERSION_NUMBER="2023-12-01"
+VERSION_NUMBER="2024-04-29"
 DASH_LINE_LENGTH=80
 CURRENT_PATH=$(pwd)
 USERNAME="$USER"
@@ -35,15 +35,14 @@ IS_HEADLESS_SERVER=0
 IS_VALID_UBUNTU_VERSION=1
 
 CLANG_VERSION="18"
-DOT_NET_VERSION="8.0"
+DOT_NET_VERSION="8"
 GCC_VERSION="14"
 
 INTENDED_UBUNTU_VERSION="24.04"
 JAVA_VERSION_LIST=('8' '11' '21')
 LOCAL_EMACS_FILENAME="emacs30_30.0.5-1_amd64-2023-09-26.deb"
 PLEX_USERNAME="plex"
-PLEX_VERSION_NUMBER="1.32.8.7639-fb6452ebf"
-POSTGRES_VERSION="16"
+PLEX_VERSION_NUMBER="1.40.2.8395-c67dce28e"
 VNC_VERSION="7.5.1"
 
 
@@ -207,7 +206,7 @@ function install_emacs_dependencies() {
     sudo apt install libclang-dev clangd-"${CLANG_VERSION}" -y
 
 
-    sudo apt install libwebkit2gtk-4.1-dev libwebkit2gtk-6.0-dev -y
+    sudo apt install libwebkit2gtk-4.1-dev -y
     sudo apt install libjpeg-dev libtiff-dev libncurses-dev texinfo libxpm-dev libwebp-dev -y
     sudo apt install libmagickcore-dev libmagick++-dev -y
     sudo apt install mailutils -y
@@ -219,31 +218,32 @@ function install_emacs_dependencies() {
 function install_emacs_debian() {
     cd_or_exit "$CURRENT_PATH"
    
-    if [[ ! -d "$CURRENT_PATH/debians" ]]
-    then
-        echo "Error: The ${CURRENT_PATH}/debians directory does not exist."
-        return 0
-    fi
+    # if [[ ! -d "$CURRENT_PATH/debians" ]]
+    # then
+    #     echo "Error: The ${CURRENT_PATH}/debians directory does not exist."
+    #     return 0
+    # fi
 
-    if [[ ! -f "$CURRENT_PATH/debians/$LOCAL_EMACS_FILENAME" ]]
-    then
-        echo "Error: ${CURRENT_PATH}/debians does not contain a $LOCAL_EMACS_FILENAME to install emacs."
-        return 0
-    fi
+    # if [[ ! -f "$CURRENT_PATH/debians/$LOCAL_EMACS_FILENAME" ]]
+    # then
+    #     echo "Error: ${CURRENT_PATH}/debians does not contain a $LOCAL_EMACS_FILENAME to install emacs."
+    #     return 0
+    # fi
 
 
-    sudo dpkg -i "$CURRENT_PATH/debians/$LOCAL_EMACS_FILENAME"
+    # sudo dpkg -i "$CURRENT_PATH/debians/$LOCAL_EMACS_FILENAME"
     
-    installation_result=$(sudo apt install --fix-broken)
+    # installation_result=$(sudo apt install --fix-broken)
     
-    if (( installation_result != 0 ))
-    then
-        echo "Error: Some issue occurred while installing the emacs debian."
-        echo "You may need to investigate this on your own."
-    else
-        echo "Complete!"
-    fi
-      
+    # if (( installation_result != 0 ))
+    # then
+    #     echo "Error: Some issue occurred while installing the emacs debian."
+    #     echo "You may need to investigate this on your own."
+    # else
+    #     echo "Complete!"
+    # fi
+
+    echo "WARNING: This section does not work since Emacs needs to be recompiled again for Ubuntu 24.04."
     # Now return
     cd_or_exit "$CURRENT_PATH"
 }
@@ -334,22 +334,8 @@ function install_php() {
 
 function install_csharp() {
     # First, cd to ~/:
-    cd "$TEMP_DOWNLOAD_PATH" || (echo "Some error occurred in csharp_tools." && exit 1)
-  
-    # Install the packing signing key.
-    wget https://packages.microsoft.com/config/ubuntu/20.04/packages-microsoft-prod.deb -O packages-microsoft-prod.deb
-    sudo dpkg -i packages-microsoft-prod.deb
-    rm packages-microsoft-prod.deb
-
-    # Now install the SDK:
-    sudo apt update
-    sudo apt install apt-transport-https -y
-    sudo apt install "dotnet-sdk-${DOT_NET_VERSION}" -y
-
-
+    sudo apt install "dotnet${DOT_NET_VERSION}" -y
     cd_or_exit "$CURRENT_PATH"
-    # cd "$HOME_PATH"
-
 }
 
 function install_python() {
@@ -384,8 +370,7 @@ function install_rust() {
 function install_sql() {
 
     sudo apt install mariadb-server -y
-    # THIS NEEDS TO BE UPDATED
-    sudo apt install "postgresql-${POSTGRES_VERSION}" -y
+    sudo apt install "postgresql" -y
 
     # Now install mysql workbench:
     sudo snap install mysql-workbench-community
@@ -709,7 +694,7 @@ function media_server_installation() {
     appearance_tools
     
     multimedia_tools
-    programming_tools
+    install_emacs
 
     vidya    
     brave_browser    
@@ -738,7 +723,7 @@ function headless_server_installation() {
 
 function verify_ubuntu_distribution() {
     distribution_name=$(lsb_release -i | awk -F ' ' '{print $3;}')
-    release_version=$(lsb_release -i | xargs | awk -F ' ' '{print $2; }')
+    release_version=$(lsb_release -r | xargs | awk -F ' ' '{print $2; }')
 
     if [[ "$distribution_name" != "Ubuntu" ]]
     then
