@@ -339,23 +339,21 @@ function install_csharp() {
 function install_python() {
     sudo apt install python3-pip -y
     sudo apt install python3-venv python-is-python3 -y
-
+    sudo apt install python3-ipython -y
+    
     # Establish python lsp server
-    python3 -m pip install --user python-lsp-server[all]
+    python3 -m pip install --user python-lsp-server[all] --break-system-packages
 
     # Symlink pylsp to pyls in order for lsp-mode to locate it.
     # You may need to change this in the future.
     ln -s ~/.local/bin/pylsp ~/.local/bin/pyls
 
     # Install some pip packages:
-
-    python3 -m pip install gdown
-    python3 -m pip install jupyterlab
-    python3 -m pip install notebook
-    python3 -m pip install ipython
-    python3 -m pip install numpy
-    python3 -m pip install ipdb
-    python3 -m pip install tldr
+    python3 -m pip install jupyterlab --break-system-packages
+    python3 -m pip install notebook --break-system-packages
+    python3 -m pip install numpy --break-system-packages
+    python3 -m pip install ipdb --break-system-packages
+    python3 -m pip install tldr --break-system-packages
 
 }
 
@@ -518,7 +516,7 @@ function vidya() {
     echo_wait "Now installing Steam and some emulators!"
     if (( IS_DESKTOP == 1 || IS_MEDIA_SERVER == 1));
     then        
-        sudo apt install steam-installer -y        
+        sudo apt install steam-libs steam-libs-i386 steam-installer -y
         sudo add-apt-repository ppa:pcsx2-team/pcsx2-daily -y
         sudo apt update
         sudo apt install pcsx2-unstable -y
@@ -681,7 +679,7 @@ function desktop_installation() {
 
 
 function media_server_installation() {
-    echo "Media Server Installation"
+    echo "Now performing a media server re-installation."
     update_first
     
     graphic_drivers
@@ -690,10 +688,11 @@ function media_server_installation() {
     
     multimedia_tools
     install_java
+    install_python
     install_emacs
 
-    vidya    
-    brave_browser    
+    vidya
+    brave_browser
     snap_applications
     install_and_configure_plex
     install_fcron
