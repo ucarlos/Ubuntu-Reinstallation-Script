@@ -40,7 +40,6 @@ GCC_VERSION="14"
 
 INTENDED_UBUNTU_VERSION="24.04"
 JAVA_VERSION_LIST=('8' '11' '21')
-LOCAL_EMACS_FILENAME="emacs30_30.0.5-1_amd64-2023-09-26.deb"
 PLEX_USERNAME="plex"
 PLEX_VERSION_NUMBER="1.40.2.8395-c67dce28e"
 VNC_VERSION="7.5.1"
@@ -249,27 +248,28 @@ function install_emacs_debian() {
 
 
 function install_emacs() {
-    echo_wait "First installing Dependencies."
-    install_emacs_dependencies
+    # Commenting this out since I'm not able to build emacs on Ubuntu 24.04 yet.
+    # echo_wait "install_emacs(): First installing Dependencies."    
+    # install_emacs_dependencies
 
-
-    read -r -n2 -p "Do you want me to install emacs through a personal debian file? [y/n] " user_input
-    if [[ $user_input =~ [yY] ]]
-    then
-        install_emacs_debian
-    else
-        read -r -n2 -p "How about installing the default emacs for your distribution? [y/n] " user_input
+    # read -r -n2 -p "Do you want me to install emacs through a personal debian file? [y/n] " user_input
+    # if [[ $user_input =~ [yY] ]]
+    # then
+    #     install_emacs_debian
+    # else
+    #     read -r -n2 -p "How about installing the default emacs for your distribution? [y/n] " user_input
         
-        if [[ $user_input =~ [yY] ]]
-        then
-            echo "Alright then, It shouldn't take long."
-            sudo apt install emacs -y
-        else
-            echo "Alright, you're on your own then."
-        fi
-            
-    fi
+    #     if [[ $user_input =~ [yY] ]]
+    #     then
+    #         echo "Alright then, It shouldn't take long."
+    #         sudo apt install emacs -y
+    #     else
+    #         echo "Alright, you're on your own then."
+    #     fi
+    # fi
     # Now return back to CURRENT_PATH just in case:
+
+    sudo apt install emacs -y
     cd_or_exit "$CURRENT_PATH"
 }
 
@@ -343,10 +343,8 @@ function install_python() {
     
     # Establish python lsp server
     python3 -m pip install --user python-lsp-server[all] --break-system-packages
+    python3 -m pip install --user python-lsp-ruff --break-system-packages
 
-    # Symlink pylsp to pyls in order for lsp-mode to locate it.
-    # You may need to change this in the future.
-    ln -s ~/.local/bin/pylsp ~/.local/bin/pyls
 
     # Install some pip packages:
     python3 -m pip install jupyterlab --break-system-packages
