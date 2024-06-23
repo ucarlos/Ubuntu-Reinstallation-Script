@@ -382,10 +382,7 @@ function install_python() {
 
     # Establish python lsp server
     python3 -m pip install --user python-lsp-server[all]
-
-    # Symlink pylsp to pyls in order for lsp-mode to locate it.
-    # You may need to change this in the future.
-    ln -s ~/.local/bin/pylsp ~/.local/bin/pyls
+    python3 -m pip install --user python-lsp-ruff
 
     # Install some pip packages:
 
