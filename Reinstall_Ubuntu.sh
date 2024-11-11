@@ -41,7 +41,7 @@ GCC_VERSION="14"
 INTENDED_UBUNTU_VERSION="24.04"
 JAVA_VERSION_LIST=('8' '11' '21')
 PLEX_USERNAME="plex"
-PLEX_VERSION_NUMBER="1.40.2.8395-c67dce28e"
+PLEX_VERSION_NUMBER="1.41.1.9057-af5eaea7a"
 VNC_VERSION="7.5.1"
 
 
@@ -64,6 +64,11 @@ function print_dashed_line() {
     echo ""
     
 }
+
+function create_required_directories() {
+    mkdir -p "$TEMP_DOWNLOAD_PATH"
+}
+
 
 function cd_or_exit() {
     cd "$1" || (echo "Error: Could not change directory to $1. Aborting." && exit 1)
@@ -94,6 +99,8 @@ function graphic_drivers() {
 # ------------------------------------------------------------------------------
 function essential_programs() {
     echo_wait "Installing some Essential Programs."
+    create_required_directories
+    
     if (( IS_HEADLESS_SERVER != 1 ));
        then
            sudo apt install deja-dup duplicity mpv -y
@@ -101,7 +108,7 @@ function essential_programs() {
            sudo apt install qbittorrent -y
            sudo apt install usb-creator-gtk -y
     fi
-    
+       
     sudo apt install htop btop git -y
     sudo apt install tmux gedit net-tools -y
     sudo apt install fdupes -y
@@ -121,7 +128,6 @@ function essential_programs() {
 
     sudo apt install webp-pixbuf-loader -y
     sudo apt install speedtest-cli -y
-
 
     if (( IS_DESKTOP == 1 ));
     then
@@ -195,85 +201,10 @@ function install_text_editors() {
 
 }
 
-function install_emacs_dependencies() {
-
-    # https://github.com/ucarlos/Ubuntu-Reinstallation-Script.git
-    
-    sudo apt install libjansson-dev "libgccjit-${GCC_VERSION}-dev" -y
-    sudo apt install libclang-dev clangd-"${CLANG_VERSION}" -y
-
-
-    sudo apt install libwebkit2gtk-4.1-dev -y
-    sudo apt install libjpeg-dev libtiff-dev libncurses-dev texinfo libxpm-dev libwebp-dev -y
-    sudo apt install libmagickcore-dev libmagick++-dev -y
-    sudo apt install mailutils -y
-    sudo apt install opus-tools -y
-
-}
-
-
-function install_emacs_debian() {
-    cd_or_exit "$CURRENT_PATH"
-   
-    # if [[ ! -d "$CURRENT_PATH/debians" ]]
-    # then
-    #     echo "Error: The ${CURRENT_PATH}/debians directory does not exist."
-    #     return 0
-    # fi
-
-    # if [[ ! -f "$CURRENT_PATH/debians/$LOCAL_EMACS_FILENAME" ]]
-    # then
-    #     echo "Error: ${CURRENT_PATH}/debians does not contain a $LOCAL_EMACS_FILENAME to install emacs."
-    #     return 0
-    # fi
-
-
-    # sudo dpkg -i "$CURRENT_PATH/debians/$LOCAL_EMACS_FILENAME"
-    
-    # installation_result=$(sudo apt install --fix-broken)
-    
-    # if (( installation_result != 0 ))
-    # then
-    #     echo "Error: Some issue occurred while installing the emacs debian."
-    #     echo "You may need to investigate this on your own."
-    # else
-    #     echo "Complete!"
-    # fi
-
-    echo "WARNING: This section does not work since Emacs needs to be recompiled again for Ubuntu 24.04."
-    # Now return
-    cd_or_exit "$CURRENT_PATH"
-}
-
-
-
 function install_emacs() {
-    # Commenting this out since I'm not able to build emacs on Ubuntu 24.04 yet.
-    # echo_wait "install_emacs(): First installing Dependencies."    
-    # install_emacs_dependencies
-
-    # read -r -n2 -p "Do you want me to install emacs through a personal debian file? [y/n] " user_input
-    # if [[ $user_input =~ [yY] ]]
-    # then
-    #     install_emacs_debian
-    # else
-    #     read -r -n2 -p "How about installing the default emacs for your distribution? [y/n] " user_input
-        
-    #     if [[ $user_input =~ [yY] ]]
-    #     then
-    #         echo "Alright then, It shouldn't take long."
-    #         sudo apt install emacs -y
-    #     else
-    #         echo "Alright, you're on your own then."
-    #     fi
-    # fi
-    # Now return back to CURRENT_PATH just in case:
-
-    sudo apt install emacs -y
+    sudo apt install emacs emacs-common-non-dfsg -y
     cd_or_exit "$CURRENT_PATH"
 }
-
-    
 
 function install_golang() {
     sudo apt install golang -y
@@ -292,10 +223,6 @@ function install_java() {
 
 function install_javascript() {
     sudo snap install node
-}
-
-function install_googletest() {
-    sudo apt install googletest -y
 }
 
 function install_cpp {
@@ -319,8 +246,8 @@ function install_cpp {
     # For Doxygen:
     sudo apt install doxygen-* -y
     sudo apt install graphviz -y
-
-    install_googletest
+    sudo apt install googletest -y
+    
 }
 
 function install_php() {
@@ -331,7 +258,6 @@ function install_php() {
 
 
 function install_csharp() {
-    # First, cd to ~/:
     sudo apt install "dotnet${DOT_NET_VERSION}" -y
     cd_or_exit "$CURRENT_PATH"
 }
@@ -361,8 +287,7 @@ function install_rust() {
 }
 
 
-function install_sql() {
-
+function install_sql() {    
     sudo apt install mariadb-server -y
     sudo apt install "postgresql" -y
 
@@ -372,12 +297,11 @@ function install_sql() {
 
 
 function install_misc_programming() {
-      # Racket
-      sudo apt install racket -y
+    # Racket
+    sudo apt install racket -y
 
-      # Static Analyzer for bash
-      sudo apt install shellcheck -y
-
+    # Static Analyzer for bash
+    sudo apt install shellcheck -y
 }
 
 
@@ -433,11 +357,9 @@ function multimedia_tools() {
 
         sudo add-apt-repository ppa:obsproject/obs-studio -y
         sudo apt-get install obs-studio -y
+
     fi
-
-
-    sudo apt-get install pavucontrol -y
-    
+        sudo apt-get install pavucontrol -y
 }
 
 function install_yacreader() {
@@ -447,10 +369,7 @@ function install_yacreader() {
 
 function install_manual_debian_files() {
     echo_wait "Now downloading and installing some .deb files that have to be installed manually."
-    
-    # Create the download path if it exists.
-    mkdir -p "$TEMP_DOWNLOAD_PATH"
-    
+        
     cd "$TEMP_DOWNLOAD_PATH" || (echo "Could not enter $TEMP_DOWNLOAD_PATH. Exiting." && exit)
 
     if (( IS_DESKTOP == 1 ));
@@ -655,20 +574,21 @@ function increase_swap_size() {
 # ------------------------------------------------------------------------------
 
 function desktop_installation() {
-    echo "Desktop Installation"
+    echo "Now performing a desktop re-installation."
+    sleep 1
     update_first
     
     graphic_drivers
     essential_programs
     brave_browser
     
-    appearance_tools    
+    appearance_tools
     programming_tools
     multimedia_tools
    
     vidya
-    #snap_ides
-    #snap_applications
+    snap_ides
+    snap_applications
     
     install_manual_debian_files
     install_fcron
@@ -678,6 +598,7 @@ function desktop_installation() {
 
 function media_server_installation() {
     echo "Now performing a media server re-installation."
+    sleep 1
     update_first
     
     graphic_drivers
@@ -685,12 +606,8 @@ function media_server_installation() {
     appearance_tools
     
     multimedia_tools
-    install_java
-    install_python
-    install_emacs
 
     vidya
-    brave_browser
     snap_applications
     install_and_configure_plex
     install_fcron
@@ -706,9 +623,7 @@ function headless_server_installation() {
     install_fcron
     increase_swap_size
 
-}    
-
-
+}
 
 # Check if the script can be run successfully on the current OS. This requires a Ubuntu
 # Distribution set to a specific release version. The Program will exit if the OS is not
