@@ -117,6 +117,8 @@ function essential_programs() {
     sudo apt install openssh-server -y
     sudo apt install flatpak -y
     sudo flatpak remote-add --if-not-exists flathub https://flathub.org/repo/flathub.flatpakrepo
+    sudo flatpak install flathub org.nicotine_plus.Nicotine -y
+
     
     sudo apt install curl -y
     sudo apt install checkinstall -y
@@ -137,6 +139,9 @@ function essential_programs() {
         sudo apt install texlive-latex-recommended -y
         sudo apt install keepassxc -y
         sudo apt install libreoffice -y
+        sudo apt install hunspell-en-us hunspell-es -y
+        
+        
         sudo apt install baobab eog gnome-system-monitor evince -y        
         sudo apt install espeak -y        
         setup_kvm
@@ -158,13 +163,7 @@ function setup_kvm() {
     
 }
 
-function appearance_tools() {
-    if (( IS_DESKTOP == 1 ));
-    then
-        sudo apt install dconf-editor -y
-
-    fi
-    
+function appearance_tools() {    
     sudo apt install fonts-firacode -y
 
     if (( IS_HEADLESS_SERVER != 1 ));
@@ -359,7 +358,14 @@ function multimedia_tools() {
         sudo apt-get install obs-studio -y
 
     fi
-        sudo apt-get install pavucontrol -y
+    
+
+    if (( IS_MEDIA_SERVER == 1 ));
+    then
+        sudo flatpak install flathub tv.kodi.Kodi -y
+    fi
+
+    sudo apt-get install pavucontrol -y
 }
 
 function install_yacreader() {
@@ -661,7 +667,7 @@ function swap_caps_lock_and_ctrl() {
         grep_check=$(grep "XKBOPTIONS" "/etc/default/keyboard")
         if [[ -z "$grep_check" ]];
         then
-            sudo echo 'XKBOPTIONS="ctrl:swapcaps"'| tee --append "/etc/default/keyboard"
+            sudo echo 'XKBOPTIONS="ctrl:swapcaps"'| sudo tee --append "/etc/default/keyboard"
         else       
             # Otherwise, replace an empty XKBOPTIONS line with the ctrl:swapcaps option.
             sudo sed -i 's/XKBOPTIONS=\"\"/XKBOPTIONS=\"ctrl:swapcaps\"/g' /etc/default/keyboard
