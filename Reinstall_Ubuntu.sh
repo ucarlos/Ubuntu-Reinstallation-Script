@@ -20,7 +20,7 @@
 # Global Variables
 # ------------------------------------------------------------------------------
 
-VERSION_NUMBER="2024-04-29"
+VERSION_NUMBER="2025-03-24"
 DASH_LINE_LENGTH=80
 CURRENT_PATH=$(pwd)
 USERNAME="$USER"
@@ -34,17 +34,14 @@ IS_MEDIA_SERVER=0
 IS_HEADLESS_SERVER=0
 IS_VALID_UBUNTU_VERSION=1
 
-CLANG_VERSION="18"
+CLANG_VERSION="19"
 DOT_NET_VERSION="8"
 GCC_VERSION="14"
 
 INTENDED_UBUNTU_VERSION="24.04"
 JAVA_VERSION_LIST=('8' '11' '21')
 PLEX_USERNAME="plex"
-PLEX_VERSION_NUMBER="1.41.1.9057-af5eaea7a"
-VNC_VERSION="7.5.1"
-
-
+PLEX_VERSION_NUMBER="v.1.41.5.9522-a96edc606"
 
 # ------------------------------------------------------------------------------
 # Essential Helper Functions
@@ -383,42 +380,10 @@ function install_manual_debian_files() {
         # Discord
         wget -O "discord-recent-version.deb" "https://discord.com/api/download?platform=linux&format=deb"
 
-        if (( IS_VALID_UBUNTU_VERSION == 1 ))
-        then
-            # Strawberry            
-            sudo flatpak install flathub org.strawberrymusicplayer.strawberry -y
-        fi
-
         # Minecraft
         wget "https://launcher.mojang.com/download/Minecraft.deb"
         
     fi
-
-    # --------------------------------------
-    # VNC Server and Client:
-    # --------------------------------------
-    
-    # VNC Client
-    # Grab the newest debian: (Warning: If the site is messed up, you're fucked...)
-
-    # curl --silent https://www.realvnc.com/en/connect/download/viewer/ | grep "DEB x64" | grep -Eo -e "data-file=\"[^\>]*" | awk -F "=" '{print $2;}
-    vnc_link=$(curl --silent https://www.realvnc.com/en/connect/download/viewer/ | grep "DEB x64" | grep -Eo -e "data-file=\"[^\>]*" | awk -F "=" '{print $2;}' | sed "s/\"/\'/g")
-    if [[ -z "$vnc_link" ]]
-    then
-        vnc_link="https://downloads.realvnc.com/download/file/viewer.files/VNC-Viewer-${VNC_VERSION}-Linux-x64.deb"
-    fi
-
-    wget "$vnc_link"
-
-
-    # Now grab the latest VNC Server debian:
-    # curl --silent "https://www.realvnc.com/en/connect/download/vnc/" | grep "DEB x64" | grep -Eo -e "data-file=\"[^\>]*" | awk -F "=" '{print $2;}'
-    vnc_link=$(curl --silent "https://www.realvnc.com/en/connect/download/vnc/" | grep "DEB x64" | grep -Eo -e "data-file=\"[^\>]*" | awk -F "=" '{print $2;}' | sed "s/\"/\'/g")
-    if [[ -z "$vnc_link" ]]
-    then
-        vnc_link="https://downloads.realvnc.com/download/file/vnc.files/VNC-Server-${VNC_VERSION}-Linux-x64.deb"
-    fi
-    
     
     # --------------------------------------    
     # ProtonVPN
@@ -432,8 +397,27 @@ function install_manual_debian_files() {
     
     yes | sudo dpkg -Ri .
 
+    install_vnc_connect
+    
+
     cd_or_exit "$CURRENT_PATH"
-}    
+}
+
+function install_vnc_connect() {
+
+    # Grab the newest VNC Connect: (Warning: If the site is messed up, you're fucked...)
+    vnc_client_link=$(curl --silent https://www.realvnc.com/en/connect/download/ | grep -Ei "Linux-x64.tar.gz" | sed -E 's/[ ]*href=//g')
+
+    if [[ -z "$vnc_client_link" ]]
+    then
+        wget "$vnc_client_link"
+    fi
+    
+    echo "Note, you'll have to extract the tarball and then run the application by yourself."
+    cd_or_exit "$CURRENT_PATH"
+}
+
+
 
 function vidya() {
     echo_wait "Now installing Steam and some emulators!"
