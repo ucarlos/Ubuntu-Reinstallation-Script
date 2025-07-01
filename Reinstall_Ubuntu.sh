@@ -134,6 +134,9 @@ function essential_programs() {
         sudo apt install hexchat filezilla -y
         sudo apt install texlive-latex-base texlive-latex-extra -y
         sudo apt install texlive-latex-recommended -y
+        sudo apt install texlive-xetex -y
+        sudo apt install texlive-lang-all -y
+
         sudo apt install keepassxc -y
         sudo apt install libreoffice -y
         sudo apt install hunspell-en-us hunspell-es -y
@@ -198,6 +201,8 @@ function install_text_editors() {
 }
 
 function install_emacs() {
+    sudo apt install dict dict-freedict-eng-spa dict-jargon dict-gcide dict-freedict-spa-eng -y
+    sudo apt install libimage-exiftool-perl -y
     sudo apt install emacs emacs-common-non-dfsg -y
     cd_or_exit "$CURRENT_PATH"
 }
@@ -262,6 +267,7 @@ function install_python() {
     sudo apt install python3-pip -y
     sudo apt install python3-venv python-is-python3 -y
     sudo apt install python3-ipython -y
+    sudo apt install pipx -y
     
     # Establish python lsp server
     python3 -m pip install --user python-lsp-server[all] --break-system-packages
