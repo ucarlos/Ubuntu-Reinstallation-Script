@@ -136,6 +136,7 @@ function essential_programs() {
         sudo apt install texlive-latex-recommended -y
         sudo apt install texlive-xetex -y
         sudo apt install texlive-lang-all -y
+        sudo apt install pandoc -y
 
         sudo apt install keepassxc -y
         sudo apt install libreoffice -y
