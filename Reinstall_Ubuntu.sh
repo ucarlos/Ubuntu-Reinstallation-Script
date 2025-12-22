@@ -224,7 +224,8 @@ function install_java() {
 }
 
 function install_javascript() {
-    sudo snap install node
+    sudo snap install node --channel=24/stable --classic
+    sudo snap install deno
 }
 
 function install_cpp {
