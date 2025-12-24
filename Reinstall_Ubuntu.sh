@@ -34,7 +34,7 @@ IS_MEDIA_SERVER=0
 IS_HEADLESS_SERVER=0
 IS_VALID_UBUNTU_VERSION=1
 
-CLANG_VERSION="19"
+CLANG_VERSION="20"
 DOT_NET_VERSION="8"
 GCC_VERSION="14"
 
@@ -115,8 +115,7 @@ function essential_programs() {
     sudo apt install flatpak -y
     sudo flatpak remote-add --if-not-exists flathub https://flathub.org/repo/flathub.flatpakrepo
     sudo flatpak install flathub org.nicotine_plus.Nicotine -y
-
-    
+   
     sudo apt install curl -y
     sudo apt install checkinstall -y
 
@@ -259,7 +258,6 @@ function install_php() {
     
 }
 
-
 function install_csharp() {
     sudo apt install "dotnet${DOT_NET_VERSION}" -y
     cd_or_exit "$CURRENT_PATH"
@@ -361,6 +359,7 @@ function multimedia_tools() {
 
         sudo add-apt-repository ppa:obsproject/obs-studio -y
         sudo apt-get install obs-studio -y
+        sudo flatpak install flathub org.strawberrymusicplayer.strawberry -y
 
     fi
     
@@ -396,9 +395,15 @@ function install_manual_debian_files() {
     # --------------------------------------    
     # ProtonVPN
     # --------------------------------------
-    
-    wget "https://repo2.protonvpn.com/debian/dists/stable/main/binary-all/protonvpn-stable-release_1.0.3-3_all.deb"
+    protonvpn_wget_link=$(curl -s https://protonvpn.com/support/official-linux-vpn-ubuntu | grep -Eo 'wget[^<"]*/stable/[^<"]*\.deb' | head -n1)
+    protonvpn_version=$(echo "$protonvpn_wget_link" | grep -Eo "protonvpn-stable-release_[0-9]\.[0-9]+\.[0-9]+_all.deb")
 
+    if [[ -s "$protonvpn_wget_link" ]]
+    then
+        echo_wait "Downloading ${protonvpn_version} from https://protonvpn.com/support/official-linux-vpn-ubuntu"
+        "$protonvpn_wget_link"
+    fi
+   
     # --------------------------------------
     # Now install each .deb file:
     # --------------------------------------
@@ -477,6 +482,7 @@ function snap_applications() {
         sudo snap install bitwarden
         sudo snap install spotify
         sudo snap install plex-desktop
+        sudo snap install ferdium
 
     elif (( IS_MEDIA_SERVER == 1 ));
     then
@@ -649,7 +655,6 @@ function verify_ubuntu_distribution() {
     
 }
 
-
 function swap_caps_lock_and_ctrl() {
     echo_wait "Now Swapping Caps Lock and Control by modifying /etc/default/keyboard..."
 
@@ -671,8 +676,6 @@ function swap_caps_lock_and_ctrl() {
         printf "\tsudo dpkg-reconfigure keyboard-configuration\n"
         printf "\t/usr/bin/setxkbmap -option \"ctrl:swapcaps\"\n"
     fi
-    
-
 }
 
 function display_main_menu() {
