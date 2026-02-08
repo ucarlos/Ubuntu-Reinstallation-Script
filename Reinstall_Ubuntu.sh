@@ -477,6 +477,7 @@ function snap_ides() {
 # Handles applications that can run through the command line.
 function snap_applications() {
     sudo snap install node --classic
+    sudo snap install bash-language-server --classic
     if (( IS_DESKTOP == 1 ));
     then
         sudo snap install bitwarden
@@ -536,7 +537,7 @@ function install_fcron() {
 
     
     # Download the tarball
-    wget "http://fcron.free.fr/archives/fcron-3.3.1.src.tar.gz"
+    wget "http://fcron.free.fr/archives/fcron-3.4.0.src.tar.gz"
     tar -xvf "fcron-3.3.1.src.tar.gz"
 
     # Now install the damn thing
