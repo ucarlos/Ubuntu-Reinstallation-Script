@@ -19,8 +19,7 @@
 # ------------------------------------------------------------------------------
 # Global Variables
 # ------------------------------------------------------------------------------
-
-VERSION_NUMBER="2026-03-26"
+VERSION_NUMBER="2026-03-29"
 DASH_LINE_LENGTH=80
 CURRENT_PATH=$(pwd)
 USERNAME="$USER"
@@ -137,7 +136,6 @@ function setup_kvm() {
     
     # Next, set up any additional permissions here:
     sudo systemctl enable libvirtd
-    
 }
 
 function appearance_tools() {    
@@ -148,7 +146,6 @@ function appearance_tools() {
         sudo apt install paper-icon-theme arc-theme -y
         sudo apt install variety -y
     fi
-
 }
 
 # ------------------------------------------------------------------------------
@@ -166,7 +163,6 @@ function brave_browser() {
     sudo apt install brave-browser -y
 }
 
-
 # ------------------------------------------------------------------------------
 # Programming Tools
 # ------------------------------------------------------------------------------
@@ -174,7 +170,6 @@ function brave_browser() {
 function install_text_editors() {
     sudo apt install neovim -y
     install_emacs
-
 }
 
 function install_emacs() {
@@ -224,13 +219,11 @@ function install_cpp {
     sudo apt install doxygen-* -y
     sudo apt install graphviz -y
     sudo apt install googletest -y
-    
 }
 
 function install_php() {
     # For now, we'll just install the default version of PHP -- Which is 8.3
     sudo apt install php -y
-    
 }
 
 function install_csharp() {
@@ -259,7 +252,6 @@ function install_python() {
 
 function install_rust() {
     sudo apt install rust-all -y
-
 }
 
 function install_sql() {    
@@ -363,7 +355,6 @@ function install_vpn() {
     echo "$debian_url"
     echo "$debian_file"
 
-
     if [[ -n "$debian_url" ]]
     then
         echo "Downloading and installing $debian_file from $debian_url..."
@@ -397,24 +388,9 @@ function install_manual_debian_files() {
     
     yes | sudo dpkg -Ri .
 
-    install_vnc_connect
-
     cd_or_exit "$CURRENT_PATH"
 }
 
-function install_vnc_connect() {
-
-    # Grab the newest VNC Connect: (Warning: If the site is messed up, you're fucked...)
-    vnc_client_link=$(curl --silent https://www.realvnc.com/en/connect/download/viewer/ | grep -Ei "Linux-x64.tar.gz" | sed -E 's/[ ]*href=//g')
-
-    if [[ -z "$vnc_client_link" ]]
-    then
-        wget "$vnc_client_link"
-    fi
-    
-    echo "Note, you'll have to extract the tarball and then run the application by yourself."
-    cd_or_exit "$CURRENT_PATH"
-}
 
 function vidya() {
     echo_wait "Now installing Steam and some emulators!"
@@ -455,7 +431,6 @@ function snap_ides() {
     sudo snap install android-studio --classic
     sudo snap install phpstorm --classic
     sudo snap install rider --classic
-    
 }    
 
 # Handles applications that can run through the command line.
@@ -475,7 +450,6 @@ function snap_applications() {
     then
         sudo snap install plex-htpc
     fi
-
 }
 
 # ------------------------------------------------------------------------------
@@ -530,7 +504,6 @@ function install_fcron() {
     # Now return:
     cd_or_exit "$CURRENT_PATH"
     # cd "$CURRENT_PATH"
-    
 }
 
 function increase_swap_size() {
@@ -551,7 +524,6 @@ function increase_swap_size() {
            
     echo_wait "Now Re-enable the swap."
     sudo swapon -a
-    
 }
 
 # ------------------------------------------------------------------------------
@@ -605,7 +577,6 @@ function headless_server_installation() {
     appearance_tools
     install_fcron
     increase_swap_size
-
 }
 
 # Check if the script can be run successfully on the current OS. This requires a Ubuntu
@@ -631,7 +602,6 @@ function verify_ubuntu_distribution() {
     fi
 
     display_main_menu
-    
 }
 
 function swap_caps_lock_and_ctrl() {
