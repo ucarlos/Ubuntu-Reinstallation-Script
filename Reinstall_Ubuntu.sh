@@ -20,7 +20,7 @@
 # Global Variables
 # ------------------------------------------------------------------------------
 
-VERSION_NUMBER="2025-03-24"
+VERSION_NUMBER="2026-03-26"
 DASH_LINE_LENGTH=80
 CURRENT_PATH=$(pwd)
 USERNAME="$USER"
@@ -36,41 +36,18 @@ IS_VALID_UBUNTU_VERSION=1
 
 CLANG_VERSION="20"
 DOT_NET_VERSION="8"
-GCC_VERSION="14"
+GCC_VERSION="15"
 
 INTENDED_UBUNTU_VERSION="24.04"
-JAVA_VERSION_LIST=('8' '11' '21')
+JAVA_VERSION_LIST=('8' '17' '25')
 PLEX_USERNAME="plex"
-PLEX_VERSION_NUMBER="v.1.41.5.9522-a96edc606"
+PLEX_VERSION_NUMBER="v.1.43.0.10492-121068a07"
+FCRON_VERSION="3.4.0"
 
 # ------------------------------------------------------------------------------
 # Essential Helper Functions
 # ------------------------------------------------------------------------------
-
-function echo_wait() {
-    echo "$1"
-    sleep 1
-
-}
-
-function print_dashed_line() {
-    for ((i = 1; i <= DASH_LINE_LENGTH; i++));
-    do
-        printf "-"
-    done
-    echo ""
-    
-}
-
-function create_required_directories() {
-    mkdir -p "$TEMP_DOWNLOAD_PATH"
-}
-
-
-function cd_or_exit() {
-    cd "$1" || (echo "Error: Could not change directory to $1. Aborting." && exit 1)
-}
-
+source "./Util.sh"
 
 # ------------------------------------------------------------------------------
 # First things first:
@@ -81,7 +58,6 @@ function update_first() {
     sudo apt upgrade -y
 }
 
-
 # ------------------------------------------------------------------------------
 # Drivers
 # ------------------------------------------------------------------------------
@@ -89,7 +65,6 @@ function graphic_drivers() {
     echo_wait "Installing Graphic Drivers."
     sudo ubuntu-drivers autoinstall
 }
-
 
 # ------------------------------------------------------------------------------
 # Essential Functions
@@ -100,12 +75,14 @@ function essential_programs() {
     
     if (( IS_HEADLESS_SERVER != 1 ));
        then
-           sudo apt install deja-dup duplicity mpv -y
+           sudo apt install mpv -y
            sudo apt install gnome-disk-utility -y
            sudo apt install qbittorrent -y
            sudo apt install usb-creator-gtk -y
     fi
-       
+
+    sudo apt install restic -y
+    sudo apt install fail2ban -y
     sudo apt install htop btop git -y
     sudo apt install tmux gedit net-tools -y
     sudo apt install fdupes -y
@@ -218,8 +195,6 @@ function install_java() {
     done
 
     sudo apt install libderby-java -y
-    
-
 }
 
 function install_javascript() {
@@ -273,21 +248,19 @@ function install_python() {
     python3 -m pip install --user python-lsp-server[all] --break-system-packages
     python3 -m pip install --user python-lsp-ruff --break-system-packages
 
-
     # Install some pip packages:
     python3 -m pip install jupyterlab --break-system-packages
     python3 -m pip install notebook --break-system-packages
     python3 -m pip install numpy --break-system-packages
     python3 -m pip install ipdb --break-system-packages
     python3 -m pip install tldr --break-system-packages
-
+    pipx install yt-dlp; pipx upgrade yt-dlp
 }
 
 function install_rust() {
     sudo apt install rust-all -y
 
 }
-
 
 function install_sql() {    
     sudo apt install mariadb-server -y
@@ -363,7 +336,6 @@ function multimedia_tools() {
 
     fi
     
-
     if (( IS_MEDIA_SERVER == 1 ));
     then
         sudo flatpak install flathub tv.kodi.Kodi -y
@@ -375,6 +347,33 @@ function multimedia_tools() {
 function install_yacreader() {
     echo_wait "Installing Yacreader..."
     sudo flatpak install YACReader -y
+}
+
+function install_vpn() {
+    cd "$TEMP_DOWNLOAD_PATH" || (echo "Could not enter $TEMP_DOWNLOAD_PATH. Exiting." && exit)
+
+    local protonvpn_command
+    local debian_url
+    local debian_file
+
+    protonvpn_command=$(curl -s https://protonvpn.com/support/official-linux-vpn-ubuntu | grep -Eo 'wget[^<"]*/stable/[^<"]*\.deb' | head -n1)
+
+    debian_url=$(echo "$protonvpn_command" | awk '{print $2}')
+    debian_file=$(basename "$debian_url")
+    echo "$debian_url"
+    echo "$debian_file"
+
+
+    if [[ -n "$debian_url" ]]
+    then
+        echo "Downloading and installing $debian_file from $debian_url..."
+        wget -O "$debian_file" "$debian_url"
+        sudo dpkg -i "$debian_file"
+    else
+        echo "Could not download ProtonVPN debian file."
+    fi
+
+    cd_or_exit "$CURRENT_PATH"
 }
 
 function install_manual_debian_files() {
@@ -392,18 +391,6 @@ function install_manual_debian_files() {
         
     fi
     
-    # --------------------------------------    
-    # ProtonVPN
-    # --------------------------------------
-    protonvpn_wget_link=$(curl -s https://protonvpn.com/support/official-linux-vpn-ubuntu | grep -Eo 'wget[^<"]*/stable/[^<"]*\.deb' | head -n1)
-    protonvpn_version=$(echo "$protonvpn_wget_link" | grep -Eo "protonvpn-stable-release_[0-9]\.[0-9]+\.[0-9]+_all.deb")
-
-    if [[ -s "$protonvpn_wget_link" ]]
-    then
-        echo_wait "Downloading ${protonvpn_version} from https://protonvpn.com/support/official-linux-vpn-ubuntu"
-        "$protonvpn_wget_link"
-    fi
-   
     # --------------------------------------
     # Now install each .deb file:
     # --------------------------------------
@@ -411,7 +398,6 @@ function install_manual_debian_files() {
     yes | sudo dpkg -Ri .
 
     install_vnc_connect
-    
 
     cd_or_exit "$CURRENT_PATH"
 }
@@ -419,7 +405,7 @@ function install_manual_debian_files() {
 function install_vnc_connect() {
 
     # Grab the newest VNC Connect: (Warning: If the site is messed up, you're fucked...)
-    vnc_client_link=$(curl --silent https://www.realvnc.com/en/connect/download/ | grep -Ei "Linux-x64.tar.gz" | sed -E 's/[ ]*href=//g')
+    vnc_client_link=$(curl --silent https://www.realvnc.com/en/connect/download/viewer/ | grep -Ei "Linux-x64.tar.gz" | sed -E 's/[ ]*href=//g')
 
     if [[ -z "$vnc_client_link" ]]
     then
@@ -429,8 +415,6 @@ function install_vnc_connect() {
     echo "Note, you'll have to extract the tarball and then run the application by yourself."
     cd_or_exit "$CURRENT_PATH"
 }
-
-
 
 function vidya() {
     echo_wait "Now installing Steam and some emulators!"
@@ -478,8 +462,10 @@ function snap_ides() {
 function snap_applications() {
     sudo snap install node --classic
     sudo snap install bash-language-server --classic
+
     if (( IS_DESKTOP == 1 ));
     then
+        sudo snap install element-desktop
         sudo snap install bitwarden
         sudo snap install spotify
         sudo snap install plex-desktop
@@ -488,12 +474,9 @@ function snap_applications() {
     elif (( IS_MEDIA_SERVER == 1 ));
     then
         sudo snap install plex-htpc
-    else
-        echo "No Snap Applications for you!"
     fi
 
 }
-
 
 # ------------------------------------------------------------------------------
 # Media Server Only Functions
@@ -523,7 +506,6 @@ function install_and_configure_plex() {
     cd_or_exit "$CURRENT_PATH"
 }
 
-
 # ------------------------------------------------------------------------------
 # Services
 # ------------------------------------------------------------------------------
@@ -534,14 +516,13 @@ function install_fcron() {
     
     echo_wait "Installing fcron dependencies first..."
     sudo apt install git autoconf mailutils docbook docbook-xsl docbook-xml docbook-utils manpages-dev -y
-
     
     # Download the tarball
-    wget "http://fcron.free.fr/archives/fcron-3.4.0.src.tar.gz"
-    tar -xvf "fcron-3.3.1.src.tar.gz"
+    wget "http://fcron.free.fr/archives/fcron-${FCRON_VERSION}.src.tar.gz"
+    tar -xvf "fcron-${FCRON_VERSION}.src.tar.gz"
 
     # Now install the damn thing
-    cd "fcron-3.3.1" && ./configure && make && sudo make install
+    cd "fcron-${FCRON_VERSION}" && ./configure && make && sudo make install
 
     # Now enable it:
     sudo systemctl enable fcron
@@ -573,7 +554,6 @@ function increase_swap_size() {
     
 }
 
-
 # ------------------------------------------------------------------------------
 # Installation Functions
 # ------------------------------------------------------------------------------
@@ -600,7 +580,6 @@ function desktop_installation() {
     increase_swap_size
 }
 
-
 function media_server_installation() {
     echo "Now performing a media server re-installation."
     sleep 1
@@ -618,7 +597,6 @@ function media_server_installation() {
     install_fcron
     increase_swap_size
 }
-
 
 function headless_server_installation() {
     update_first
@@ -706,7 +684,6 @@ function display_main_menu() {
     user_input=$(echo "$user_input" | awk '{print tolower($0)}')
     echo ""
 
-       
     if [ "$user_input" == "a" ];
     then
         desktop_installation
