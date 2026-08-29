@@ -12,14 +12,14 @@
 # Note:
 # This installation script is meant to be used in a Ubuntu Distribution.
 #
+# TODO: Possibly Replace this with a Python Script as some point?
 # ------------------------------------------------------------------------------
-
+#
 
 # ------------------------------------------------------------------------------
 # Global Variables
 # ------------------------------------------------------------------------------
-
-VERSION_NUMBER="2023-12-01"
+VERSION_NUMBER="2026-03-29"
 DASH_LINE_LENGTH=80
 CURRENT_PATH=$(pwd)
 USERNAME="$USER"
@@ -33,44 +33,20 @@ IS_MEDIA_SERVER=0
 IS_HEADLESS_SERVER=0
 IS_VALID_UBUNTU_VERSION=1
 
-CLANG_VERSION="15"
-DOT_NET_VERSION="7.0"
-GCC_VERSION="13"
+CLANG_VERSION="20"
+DOT_NET_VERSION="8"
+GCC_VERSION="15"
 
-INTENDED_UBUNTU_VERSION="22.04"
-JAVA_VERSION_LIST=('8' '11' '18')
-LOCAL_EMACS_FILENAME="emacs30_30.0.5-1_amd64-2023-09-26.deb"
-PHP_VERSION="8.1"
+INTENDED_UBUNTU_VERSION="24.04"
+JAVA_VERSION_LIST=('8' '17' '25')
 PLEX_USERNAME="plex"
-PLEX_VERSION_NUMBER="1.32.8.7639-fb6452ebf"
-POSTGRES_VERSION="14"
-VNC_VERSION="7.5.1"
-
-
+PLEX_VERSION_NUMBER="v.1.43.0.10492-121068a07"
+FCRON_VERSION="3.4.0"
 
 # ------------------------------------------------------------------------------
 # Essential Helper Functions
 # ------------------------------------------------------------------------------
-
-function echo_wait() {
-    echo "$1"
-    sleep 1
-
-}
-
-function print_dashed_line() {
-    for ((i = 1; i <= DASH_LINE_LENGTH; i++));
-    do
-        printf "-"
-    done
-    echo ""
-    
-}
-
-function cd_or_exit() {
-    cd "$1" || (echo "Error: Could not change directory to $1. Aborting." && exit 1)
-}
-
+source "./Util.sh"
 
 # ------------------------------------------------------------------------------
 # First things first:
@@ -81,7 +57,6 @@ function update_first() {
     sudo apt upgrade -y
 }
 
-
 # ------------------------------------------------------------------------------
 # Drivers
 # ------------------------------------------------------------------------------
@@ -90,35 +65,33 @@ function graphic_drivers() {
     sudo ubuntu-drivers autoinstall
 }
 
-
 # ------------------------------------------------------------------------------
 # Essential Functions
 # ------------------------------------------------------------------------------
 function essential_programs() {
     echo_wait "Installing some Essential Programs."
+    create_required_directories
+
     if (( IS_HEADLESS_SERVER != 1 ));
        then
-           sudo apt install deja-dup duplicity mpv -y
+           sudo apt install mpv -y
            sudo apt install gnome-disk-utility -y
-           sudo apt install hexchat filezilla -y
-           sudo apt install nautlius -y
            sudo apt install qbittorrent -y
            sudo apt install usb-creator-gtk -y
-           sudo apt install libreoffice -y
-           sudo apt install thunderbird -y
-           sudo apt install baobab eog gnome-system-monitor evince -y
     fi
-    
+
+    sudo apt install restic -y
+    sudo apt install fail2ban -y
     sudo apt install htop btop git -y
     sudo apt install tmux gedit net-tools -y
     sudo apt install fdupes -y
     sudo apt install neofetch screenfetch -y
-    sudo apt install texlive-latex-base texlive-latex-extra -y
-    sudo apt install texlive-latex-recommended -y
     sudo apt install ttf-mscorefonts-installer -y
     sudo apt install openssh-server -y
     sudo apt install flatpak -y
-    
+    sudo flatpak remote-add --if-not-exists flathub https://flathub.org/repo/flathub.flatpakrepo
+    sudo flatpak install flathub org.nicotine_plus.Nicotine -y
+
     sudo apt install curl -y
     sudo apt install checkinstall -y
 
@@ -128,41 +101,44 @@ function essential_programs() {
     sudo apt install nmap -y
 
     sudo apt install webp-pixbuf-loader -y
-    sudo apt install keepassxc -y
-    sudo apt install espeak -y
     sudo apt install speedtest-cli -y
-    sudo apt install gnucash -y
-
 
     if (( IS_DESKTOP == 1 ));
-    then        
+    then
+        sudo apt install thunderbird -y
+        sudo apt install hexchat filezilla -y
+        sudo apt install texlive-latex-base texlive-latex-extra -y
+        sudo apt install texlive-latex-recommended -y
+        sudo apt install texlive-xetex -y
+        sudo apt install texlive-lang-all -y
+        sudo apt install pandoc -y
+
+        sudo apt install keepassxc -y
+        sudo apt install libreoffice -y
+        sudo apt install hunspell-en-us hunspell-es -y
+
+
+        sudo apt install baobab eog gnome-system-monitor evince -y
+        sudo apt install espeak -y
         setup_kvm
+
+        echo_wait "Installing Calibre Library..."
+        sudo -v && wget -nv -O- https://download.calibre-ebook.com/linux-installer.sh | sudo sh /dev/stdin
+
+        install_yacreader
     fi
-
-
-    echo_wait "Installing Calibre Library..."
-    sudo -v && wget -nv -O- https://download.calibre-ebook.com/linux-installer.sh | sudo sh /dev/stdin
-
-    install_yacreader
-    
 }    
 
 function setup_kvm() {
     # First, install the requirements:
-    sudo apt install qemu qemu-kvm libvirt-daemon-system libvirt-clients bridge-utils virtinst virt-manager -y
+
+    sudo apt install qemu-system qemu-kvm libvirt-daemon-system libvirt-clients bridge-utils virtinst virt-manager -y
     
     # Next, set up any additional permissions here:
     sudo systemctl enable libvirtd
-    
 }
 
 function appearance_tools() {
-    if (( IS_DESKTOP == 1 ));
-    then
-        sudo apt install dconf-editor -y
-
-    fi
-    
     sudo apt install fonts-firacode -y
 
     if (( IS_HEADLESS_SERVER != 1 ));
@@ -170,7 +146,6 @@ function appearance_tools() {
         sudo apt install paper-icon-theme arc-theme -y
         sudo apt install variety -y
     fi
-
 }
 
 # ------------------------------------------------------------------------------
@@ -188,7 +163,6 @@ function brave_browser() {
     sudo apt install brave-browser -y
 }
 
-
 # ------------------------------------------------------------------------------
 # Programming Tools
 # ------------------------------------------------------------------------------
@@ -196,87 +170,17 @@ function brave_browser() {
 function install_text_editors() {
     sudo apt install neovim -y
     install_emacs
-
 }
-
-function install_emacs_dependencies() {
-    sudo apt install libjansson-dev "libgccjit-${GCC_VERSION}-dev" -y
-    sudo apt install libclang-dev clangd-"${CLANG_VERSION}" -y
-    sudo apt install libwebkit2gtk-4.0-dev -y
-    sudo apt install libjpeg-dev libtiff-dev libncurses-dev texinfo libxpm-dev libwebp-dev -y
-    sudo apt install libmagickcore-dev libmagick++-dev -y
-    sudo apt install mailutils -y
-    sudo apt install opus-tools -y
-
-}
-
-
-function install_emacs_debian() {
-    cd_or_exit "$CURRENT_PATH"
-   
-    if [[ ! -d "$CURRENT_PATH/debians" ]]
-    then
-        echo "Error: The ${CURRENT_PATH}/debians directory does not exist."
-        return 0
-    fi
-
-    if [[ ! -f "$CURRENT_PATH/debians/$LOCAL_EMACS_FILENAME" ]]
-    then
-        echo "Error: ${CURRENT_PATH}/debians does not contain a $LOCAL_EMACS_FILENAME to install emacs."
-        return 0
-    fi
-
-
-    sudo dpkg -i "$CURRENT_PATH/debians/$LOCAL_EMACS_FILENAME"
-    
-    installation_result=$(sudo apt install --fix-broken)
-    
-    if (( installation_result != 0 ))
-    then
-        echo "Error: Some issue occurred while installing the emacs debian."
-        echo "You may need to investigate this on your own."
-    else
-        echo "Complete!"
-    fi
-      
-    # Now return
-    cd_or_exit "$CURRENT_PATH"
-}
-
-
 
 function install_emacs() {
-    echo_wait "First installing Dependencies."
-    install_emacs_dependencies
-
-
-    read -r -n2 -p "Do you want me to install emacs through a personal debian file? [y/n] " user_input
-    if [[ $user_input =~ [yY] ]]
-    then
-        install_emacs_debian
-    else
-        read -r -n2 -p "How about installing the default emacs for your distribution? [y/n] " user_input
-        
-        if [[ $user_input =~ [yY] ]]
-        then
-            echo "Alright then, It shouldn't take long."
-            sudo apt install emacs -y
-        else
-            echo "Alright, you're on your own then."
-        fi
-            
-    fi
-    # Now return back to CURRENT_PATH just in case:
+    sudo apt install dict dict-freedict-eng-spa dict-jargon dict-gcide dict-freedict-spa-eng -y
+    sudo apt install libimage-exiftool-perl -y
+    sudo apt install emacs emacs-common-non-dfsg -y
     cd_or_exit "$CURRENT_PATH"
 }
 
-    
-
 function install_golang() {
-    sudo add-apt-repository ppa:longsleep/golang-backports -y
-    sudo apt update
-    sudo apt install golang-go -y
-           
+    sudo apt install golang -y
 }
 
 function install_java() {
@@ -286,31 +190,11 @@ function install_java() {
     done
 
     sudo apt install libderby-java -y
-    
-
 }
 
 function install_javascript() {
-    sudo snap install node
-}
-
-function install_googletest() {
-    
-    mkdir -p "$TEMP_DOWNLOAD_PATH"
-    cd_or_exit "$TEMP_DOWNLOAD_PATH"
-    # cd "$TEMP_DOWNLOAD_PATH"
-    
-    # Clone and build googletest.
-    git clone https://github.com/google/googletest.git
-    cmake .
-    make
-
-    # I would recommend using checkinstall manually to install this,
-    # but you can also just do sudo make install at your peril.
-    sudo make install
-
-    # Now return
-    cd_or_exit "$CURRENT_PATH"
+    sudo snap install node --channel=24/stable --classic
+    sudo snap install deno
 }
 
 function install_cpp {
@@ -324,10 +208,8 @@ function install_cpp {
     sudo apt install "libstdc++-${GCC_VERSION}-dev" -y
     sudo apt install "clang-${CLANG_VERSION}" -y
     sudo apt install valgrind -y
-    sudo apt install cppman -y
     
     sudo apt install libpqxx-dev libmysql++-dev -y
-    cppman --cache-all &
     
     sudo apt install libboost-all-dev -y
     sudo apt install cmake -y
@@ -336,76 +218,45 @@ function install_cpp {
     # For Doxygen:
     sudo apt install doxygen-* -y
     sudo apt install graphviz -y
-
-    install_googletest
+    sudo apt install googletest -y
 }
 
 function install_php() {
-    # Repo for PHP:
-    sudo apt install software-properties-common -y
-    sudo add-apt-repository ppa:ondrej/php -y
-
-    # If using apache, do this:
-    # sudo apt update
-    # sudo apt install php8.0 libapache2-mod-php8.0
-    # For more information, go to https://linuxize.com/post/how-to-install-php-8-on-ubuntu-20-04/
-    
-    sudo apt install "php${PHP_VERSION}-dev" -y
-    sudo apt install "php${PHP_VERSION}-*" -y
-
+    # For now, we'll just install the default version of PHP -- Which is 8.3
+    sudo apt install php -y
 }
 
-
 function install_csharp() {
-    # First, cd to ~/:
-    cd "$TEMP_DOWNLOAD_PATH" || (echo "Some error occurred in csharp_tools." && exit 1)
-  
-    # Install the packing signing key.
-    wget https://packages.microsoft.com/config/ubuntu/20.04/packages-microsoft-prod.deb -O packages-microsoft-prod.deb
-    sudo dpkg -i packages-microsoft-prod.deb
-    rm packages-microsoft-prod.deb
-
-    # Now install the SDK:
-    sudo apt update
-    sudo apt install apt-transport-https -y
-    sudo apt install "dotnet-sdk-${DOT_NET_VERSION}" -y
-
-
+    sudo apt install "dotnet${DOT_NET_VERSION}" -y
     cd_or_exit "$CURRENT_PATH"
-    # cd "$HOME_PATH"
-
 }
 
 function install_python() {
     sudo apt install python3-pip -y
     sudo apt install python3-venv python-is-python3 -y
+    sudo apt install python3-ipython -y
+    sudo apt install pipx -y
 
     # Establish python lsp server
-    python3 -m pip install --user python-lsp-server[all]
-    python3 -m pip install --user python-lsp-ruff
+    python3 -m pip install --user python-lsp-server[all] --break-system-packages
+    python3 -m pip install --user python-lsp-ruff --break-system-packages
 
     # Install some pip packages:
-
-    python3 -m pip install gdown
-    python3 -m pip install jupyterlab
-    python3 -m pip install notebook
-    python3 -m pip install ipython
-    python3 -m pip install numpy
-    python3 -m pip install ipdb
-    python3 -m pip install tldr
-
+    python3 -m pip install jupyterlab --break-system-packages
+    python3 -m pip install notebook --break-system-packages
+    python3 -m pip install numpy --break-system-packages
+    python3 -m pip install ipdb --break-system-packages
+    python3 -m pip install tldr --break-system-packages
+    pipx install yt-dlp; pipx upgrade yt-dlp
 }
 
 function install_rust() {
     sudo apt install rust-all -y
-
 }
 
-
 function install_sql() {
-
     sudo apt install mariadb-server -y
-    sudo apt install "postgresql-${POSTGRES_VERSION}" -y
+    sudo apt install "postgresql" -y
 
     # Now install mysql workbench:
     sudo snap install mysql-workbench-community
@@ -413,12 +264,11 @@ function install_sql() {
 
 
 function install_misc_programming() {
-      # Racket
-      sudo apt install racket -y
+    # Racket
+    sudo apt install racket -y
 
-      # Static Analyzer for bash
-      sudo apt install shellcheck -y
-
+    # Static Analyzer for bash
+    sudo apt install shellcheck -y
 }
 
 
@@ -474,27 +324,52 @@ function multimedia_tools() {
 
         sudo add-apt-repository ppa:obsproject/obs-studio -y
         sudo apt-get install obs-studio -y
+        sudo flatpak install flathub org.strawberrymusicplayer.strawberry -y
+
     fi
 
+    if (( IS_MEDIA_SERVER == 1 ));
+    then
+        sudo flatpak install flathub tv.kodi.Kodi -y
+    fi
 
     sudo apt-get install pavucontrol -y
-    
 }
 
 function install_yacreader() {
-    if (( IS_VALID_UBUNTU_VERSION == 1 ))
+    echo_wait "Installing Yacreader..."
+    sudo flatpak install YACReader -y
+}
+
+function install_vpn() {
+    cd "$TEMP_DOWNLOAD_PATH" || (echo "Could not enter $TEMP_DOWNLOAD_PATH. Exiting." && exit)
+
+    local protonvpn_command
+    local debian_url
+    local debian_file
+
+    protonvpn_command=$(curl -s https://protonvpn.com/support/official-linux-vpn-ubuntu | grep -Eo 'wget[^<"]*/stable/[^<"]*\.deb' | head -n1)
+
+    debian_url=$(echo "$protonvpn_command" | awk '{print $2}')
+    debian_file=$(basename "$debian_url")
+    echo "$debian_url"
+    echo "$debian_file"
+
+    if [[ -n "$debian_url" ]]
     then
-        echo_wait "Installing Yacreader..."
-        sudo flatpak install YACReader
+        echo "Downloading and installing $debian_file from $debian_url..."
+        wget -O "$debian_file" "$debian_url"
+        sudo dpkg -i "$debian_file"
+    else
+        echo "Could not download ProtonVPN debian file."
     fi
+
+    cd_or_exit "$CURRENT_PATH"
 }
 
 function install_manual_debian_files() {
     echo_wait "Now downloading and installing some .deb files that have to be installed manually."
-    
-    # Create the download path if it exists.
-    mkdir -p "$TEMP_DOWNLOAD_PATH"
-    
+
     cd "$TEMP_DOWNLOAD_PATH" || (echo "Could not enter $TEMP_DOWNLOAD_PATH. Exiting." && exit)
 
     if (( IS_DESKTOP == 1 ));
@@ -502,61 +377,10 @@ function install_manual_debian_files() {
         # Discord
         wget -O "discord-recent-version.deb" "https://discord.com/api/download?platform=linux&format=deb"
 
-
-
-        if (( IS_VALID_UBUNTU_VERSION == 1 ))
-        then
-            # Strawberry            
-            wget "https://files.strawberrymusicplayer.org/strawberry_1.0.5-jammy_amd64.deb"
-        fi
-
         # Minecraft
         wget "https://launcher.mojang.com/download/Minecraft.deb"
-
-        # TeamViewer:
-        wget "https://download.teamviewer.com/download/linux/teamviewer_amd64.deb"
         
     fi
-
-    # --------------------------------------
-    # VNC Server and Client:
-    # --------------------------------------
-    
-    # VNC Client
-    # Grab the newest debian: (Warning: If the site is messed up, you're fucked...)
-
-    # curl --silent https://www.realvnc.com/en/connect/download/viewer/ | grep "DEB x64" | grep -Eo -e "data-file=\"[^\>]*" | awk -F "=" '{print $2;}
-    vnc_link=$(curl --silent https://www.realvnc.com/en/connect/download/viewer/ | grep "DEB x64" | grep -Eo -e "data-file=\"[^\>]*" | awk -F "=" '{print $2;}' | sed "s/\"/\'/g")
-    if [[ -z "$vnc_link" ]]
-    then
-        vnc_link="https://downloads.realvnc.com/download/file/viewer.files/VNC-Viewer-${VNC_VERSION}-Linux-x64.deb"
-    fi
-
-    wget "$vnc_link"
-
-
-    # Now grab the latest VNC Server debian:
-    # curl --silent "https://www.realvnc.com/en/connect/download/vnc/" | grep "DEB x64" | grep -Eo -e "data-file=\"[^\>]*" | awk -F "=" '{print $2;}'
-    vnc_link=$(curl --silent "https://www.realvnc.com/en/connect/download/vnc/" | grep "DEB x64" | grep -Eo -e "data-file=\"[^\>]*" | awk -F "=" '{print $2;}' | sed "s/\"/\'/g")
-    if [[ -z "$vnc_link" ]]
-    then
-        vnc_link="https://downloads.realvnc.com/download/file/vnc.files/VNC-Server-${VNC_VERSION}-Linux-x64.deb"
-    fi
-    
-    
-    # --------------------------------------    
-    # ProtonVPN
-    # --------------------------------------
-    
-    wget "https://repo.protonvpn.com/debian/dists/stable/main/binary-all/protonvpn-stable-release_1.0.3-2_all.deb"
-
-    checksum_result=$(echo "c68a0b8dad58ab75080eed7cb989e5634fc88fca051703139c025352a6ee19ad  protonvpn-stable-release_1.0.3-2_all.deb" | sha256sum --check -)
-    if [[ "$checksum_result" != "protonvpn-stable-release_1.0.3-2_all.deb: OK" ]];
-    then
-        echo "Checksum for ProtonVPN Debian doesn't check out; Deleting file."
-        rm -v "protonvpn-stable-release_1.0.3-2_all.deb"
-    fi
-
 
     # --------------------------------------
     # Now install each .deb file:
@@ -565,13 +389,14 @@ function install_manual_debian_files() {
     yes | sudo dpkg -Ri .
 
     cd_or_exit "$CURRENT_PATH"
-}    
+}
+
 
 function vidya() {
     echo_wait "Now installing Steam and some emulators!"
     if (( IS_DESKTOP == 1 || IS_MEDIA_SERVER == 1));
     then        
-        sudo apt install steam-installer -y        
+        sudo apt install steam-libs steam-libs-i386 steam-installer -y
         sudo add-apt-repository ppa:pcsx2-team/pcsx2-daily -y
         sudo apt update
         sudo apt install pcsx2-unstable -y
@@ -581,7 +406,7 @@ function vidya() {
     if (( IS_DESKTOP == 1 ));
        then
            sudo add-apt-repository ppa:libretro/stable -y
-           sudo apt install libretro-* -y
+           #sudo apt install libretro-* -y # MAME and MESS are currently BROKEN
            sudo apt install retroarch -y
     fi
 
@@ -606,27 +431,26 @@ function snap_ides() {
     sudo snap install android-studio --classic
     sudo snap install phpstorm --classic
     sudo snap install rider --classic
-    
 }    
 
 # Handles applications that can run through the command line.
 function snap_applications() {
     sudo snap install node --classic
+    sudo snap install bash-language-server --classic
+
     if (( IS_DESKTOP == 1 ));
     then
+        sudo snap install element-desktop
         sudo snap install bitwarden
         sudo snap install spotify
         sudo snap install plex-desktop
+        sudo snap install ferdium
 
     elif (( IS_MEDIA_SERVER == 1 ));
     then
         sudo snap install plex-htpc
-    else
-        echo "No Snap Applications for you!"
     fi
-
 }
-
 
 # ------------------------------------------------------------------------------
 # Media Server Only Functions
@@ -656,7 +480,6 @@ function install_and_configure_plex() {
     cd_or_exit "$CURRENT_PATH"
 }
 
-
 # ------------------------------------------------------------------------------
 # Services
 # ------------------------------------------------------------------------------
@@ -667,14 +490,13 @@ function install_fcron() {
     
     echo_wait "Installing fcron dependencies first..."
     sudo apt install git autoconf mailutils docbook docbook-xsl docbook-xml docbook-utils manpages-dev -y
-
     
     # Download the tarball
-    wget "http://fcron.free.fr/archives/fcron-3.3.1.src.tar.gz"
-    tar -xvf "fcron-3.3.1.src.tar.gz"
+    wget "http://fcron.free.fr/archives/fcron-${FCRON_VERSION}.src.tar.gz"
+    tar -xvf "fcron-${FCRON_VERSION}.src.tar.gz"
 
     # Now install the damn thing
-    cd "fcron-3.3.1" && ./configure && make && sudo make install
+    cd "fcron-${FCRON_VERSION}" && ./configure && make && sudo make install
 
     # Now enable it:
     sudo systemctl enable fcron
@@ -682,7 +504,6 @@ function install_fcron() {
     # Now return:
     cd_or_exit "$CURRENT_PATH"
     # cd "$CURRENT_PATH"
-    
 }
 
 function increase_swap_size() {
@@ -703,23 +524,22 @@ function increase_swap_size() {
            
     echo_wait "Now Re-enable the swap."
     sudo swapon -a
-    
 }
-
 
 # ------------------------------------------------------------------------------
 # Installation Functions
 # ------------------------------------------------------------------------------
 
 function desktop_installation() {
-    echo "Desktop Installation"
+    echo "Now performing a desktop re-installation."
+    sleep 1
     update_first
     
     graphic_drivers
     essential_programs
     brave_browser
     
-    appearance_tools    
+    appearance_tools
     programming_tools
     multimedia_tools
    
@@ -732,9 +552,9 @@ function desktop_installation() {
     increase_swap_size
 }
 
-
 function media_server_installation() {
-    echo "Media Server Installation"
+    echo "Now performing a media server re-installation."
+    sleep 1
     update_first
     
     graphic_drivers
@@ -742,16 +562,13 @@ function media_server_installation() {
     appearance_tools
     
     multimedia_tools
-    programming_tools
 
-    vidya    
-    brave_browser    
+    vidya
     snap_applications
     install_and_configure_plex
     install_fcron
     increase_swap_size
 }
-
 
 function headless_server_installation() {
     update_first
@@ -760,10 +577,7 @@ function headless_server_installation() {
     appearance_tools
     install_fcron
     increase_swap_size
-
-}    
-
-
+}
 
 # Check if the script can be run successfully on the current OS. This requires a Ubuntu
 # Distribution set to a specific release version. The Program will exit if the OS is not
@@ -771,7 +585,7 @@ function headless_server_installation() {
 
 function verify_ubuntu_distribution() {
     distribution_name=$(lsb_release -i | awk -F ' ' '{print $3;}')
-    release_version=$(lsb_release -i | xargs | awk -F ' ' '{print $2; }')
+    release_version=$(lsb_release -r | xargs | awk -F ' ' '{print $2; }')
 
     if [[ "$distribution_name" != "Ubuntu" ]]
     then
@@ -788,9 +602,7 @@ function verify_ubuntu_distribution() {
     fi
 
     display_main_menu
-    
 }
-
 
 function swap_caps_lock_and_ctrl() {
     echo_wait "Now Swapping Caps Lock and Control by modifying /etc/default/keyboard..."
@@ -801,7 +613,7 @@ function swap_caps_lock_and_ctrl() {
         grep_check=$(grep "XKBOPTIONS" "/etc/default/keyboard")
         if [[ -z "$grep_check" ]];
         then
-            sudo echo 'XKBOPTIONS="ctrl:swapcaps"'| tee --append "/etc/default/keyboard"
+            sudo echo 'XKBOPTIONS="ctrl:swapcaps"'| sudo tee --append "/etc/default/keyboard"
         else       
             # Otherwise, replace an empty XKBOPTIONS line with the ctrl:swapcaps option.
             sudo sed -i 's/XKBOPTIONS=\"\"/XKBOPTIONS=\"ctrl:swapcaps\"/g' /etc/default/keyboard
@@ -813,8 +625,6 @@ function swap_caps_lock_and_ctrl() {
         printf "\tsudo dpkg-reconfigure keyboard-configuration\n"
         printf "\t/usr/bin/setxkbmap -option \"ctrl:swapcaps\"\n"
     fi
-    
-
 }
 
 function display_main_menu() {
@@ -844,7 +654,6 @@ function display_main_menu() {
     user_input=$(echo "$user_input" | awk '{print tolower($0)}')
     echo ""
 
-       
     if [ "$user_input" == "a" ];
     then
         desktop_installation

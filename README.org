@@ -2,14 +2,12 @@
 #+author: Ulysses Carlos
 #+date: <2021-11-06 Sat>
 
-
-A ~bash~ script that handles reinstalling a Ubuntu distribution with the programs needed for my personal usage.
-This handles installation of essential programs, programming and multimedia tools, browsers, and snap applications
+A ~bash~ script that handles reinstalling a Ubuntu distribution with the programs needed for my personal usage. This handles installation of essential programs, programming and multimedia tools, browsers, and snap applications.
 
 * Requirements
 + A modern ~bash~ installation (At least ~bash~ 4.4)
 + An Ubuntu Distribution
-+ Python 3
++ Python3
   
 You may need to install the following program(s) if they do not exist on your machine:
 + ~lsb_release~
