@@ -61,7 +61,7 @@ function update_first() {
 # ------------------------------------------------------------------------------
 function graphic_drivers() {
     echo_wait "Installing Graphic Drivers."
-    sudo ubuntu-drivers autoinstall
+    sudo ubuntu-drivers install
 }
 
 # ------------------------------------------------------------------------------
