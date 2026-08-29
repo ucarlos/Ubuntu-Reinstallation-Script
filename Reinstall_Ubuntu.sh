@@ -5,9 +5,9 @@
 # Reinstall_Ubuntu.sh
 # This is essentially a more user friendly version of New_installation.sh
 # Which reinstalls all the programs I would want in a Ubuntu Reinstallation.
-# 
+#
 # It covers a normal workstation desktop installation, media server installation
-# and a minimal build. 
+# and a minimal build.
 
 # Note:
 # This installation script is meant to be used in a Ubuntu Distribution.
@@ -19,7 +19,7 @@
 # ------------------------------------------------------------------------------
 # Global Variables
 # ------------------------------------------------------------------------------
-VERSION_NUMBER="2026-03-29"
+VERSION_NUMBER="2026-08-29"
 DASH_LINE_LENGTH=80
 CURRENT_PATH=$(pwd)
 USERNAME="$USER"
@@ -33,15 +33,14 @@ IS_MEDIA_SERVER=0
 IS_HEADLESS_SERVER=0
 IS_VALID_UBUNTU_VERSION=1
 
-CLANG_VERSION="20"
-DOT_NET_VERSION="8"
-GCC_VERSION="15"
+CLANG_VERSION="22"
+DOT_NET_VERSION="10"
+GCC_VERSION="16"
 
-INTENDED_UBUNTU_VERSION="24.04"
-JAVA_VERSION_LIST=('8' '17' '25')
+INTENDED_UBUNTU_VERSION="26.04"
+JAVA_VERSION_LIST=('8' '21' '25')
 PLEX_USERNAME="plex"
-PLEX_VERSION_NUMBER="v.1.43.0.10492-121068a07"
-FCRON_VERSION="3.4.0"
+FCRON_VERSION="3.4.1"
 
 # ------------------------------------------------------------------------------
 # Essential Helper Functions
@@ -77,7 +76,7 @@ function essential_programs() {
            sudo apt install mpv -y
            sudo apt install gnome-disk-utility -y
            sudo apt install qbittorrent -y
-           sudo apt install usb-creator-gtk -y
+           sudo apt install usb-creator-kde -y
     fi
 
     sudo apt install restic -y
@@ -85,7 +84,7 @@ function essential_programs() {
     sudo apt install htop btop git -y
     sudo apt install tmux gedit net-tools -y
     sudo apt install fdupes -y
-    sudo apt install neofetch screenfetch -y
+    sudo apt install fastfetch -y
     sudo apt install ttf-mscorefonts-installer -y
     sudo apt install openssh-server -y
     sudo apt install flatpak -y
@@ -127,13 +126,13 @@ function essential_programs() {
 
         install_yacreader
     fi
-}    
+}
 
 function setup_kvm() {
     # First, install the requirements:
 
     sudo apt install qemu-system qemu-kvm libvirt-daemon-system libvirt-clients bridge-utils virtinst virt-manager -y
-    
+
     # Next, set up any additional permissions here:
     sudo systemctl enable libvirtd
 }
@@ -154,7 +153,7 @@ function appearance_tools() {
 function brave_browser() {
     echo_wait "Now installing Brave Browser."
     sudo apt install apt-transport-https curl -y
-    
+
     curl -s https://brave-browser-apt-release.s3.brave.com/brave-core.asc | sudo apt-key --keyring /etc/apt/trusted.gpg.d/brave-browser-release.gpg add -
 
     echo "deb [arch=amd64] https://brave-browser-apt-release.s3.brave.com/ stable main" | sudo tee /etc/apt/sources.list.d/brave-browser-release.list
@@ -208,9 +207,9 @@ function install_cpp {
     sudo apt install "libstdc++-${GCC_VERSION}-dev" -y
     sudo apt install "clang-${CLANG_VERSION}" -y
     sudo apt install valgrind -y
-    
+
     sudo apt install libpqxx-dev libmysql++-dev -y
-    
+
     sudo apt install libboost-all-dev -y
     sudo apt install cmake -y
     sudo apt install libspdlog-dev -y
@@ -223,7 +222,7 @@ function install_cpp {
 
 function install_php() {
     # For now, we'll just install the default version of PHP -- Which is 8.3
-    sudo apt install php -y
+    sudo apt install php-all-dev -y
 }
 
 function install_csharp() {
@@ -256,7 +255,7 @@ function install_rust() {
 
 function install_sql() {
     sudo apt install mariadb-server -y
-    sudo apt install "postgresql" -y
+    sudo apt install postgresql -y
 
     # Now install mysql workbench:
     sudo snap install mysql-workbench-community
@@ -277,7 +276,7 @@ function programming_tools() {
 
     # Text Editors
     install_text_editors
-    
+
     # C/C++
     install_cpp
 
@@ -286,13 +285,13 @@ function programming_tools() {
 
     # Golang
     install_golang
-    
+
     # Java
     install_java
 
     # JavaScript
     install_javascript
-      
+
     # PHP
     install_php
 
@@ -314,7 +313,7 @@ function programming_tools() {
 
 function multimedia_tools() {
     echo_wait "Installing some multimedia, multimedia editing, and recording software..."
-    
+
     if (( IS_DESKTOP == 1 ));
     then
         sudo apt install kdenlive -y
@@ -374,18 +373,16 @@ function install_manual_debian_files() {
 
     if (( IS_DESKTOP == 1 ));
     then
-        # Discord
-        wget -O "discord-recent-version.deb" "https://discord.com/api/download?platform=linux&format=deb"
 
         # Minecraft
         wget "https://launcher.mojang.com/download/Minecraft.deb"
-        
+
     fi
 
     # --------------------------------------
     # Now install each .deb file:
     # --------------------------------------
-    
+
     yes | sudo dpkg -Ri .
 
     cd_or_exit "$CURRENT_PATH"
@@ -395,12 +392,12 @@ function install_manual_debian_files() {
 function vidya() {
     echo_wait "Now installing Steam and some emulators!"
     if (( IS_DESKTOP == 1 || IS_MEDIA_SERVER == 1));
-    then        
+    then
         sudo apt install steam-libs steam-libs-i386 steam-installer -y
         sudo add-apt-repository ppa:pcsx2-team/pcsx2-daily -y
         sudo apt update
         sudo apt install pcsx2-unstable -y
-        
+
     fi
 
     if (( IS_DESKTOP == 1 ));
@@ -425,13 +422,13 @@ function snap_ides() {
     echo_wait "Now installing snap programs..."
     sudo snap install clion --classic
     sudo snap install pycharm-professional --classic
-    sudo snap install intellij-idea-ultimate --classic    
+    sudo snap install intellij-idea-ultimate --classic
     sudo snap install codium --classic
-    
+
     sudo snap install android-studio --classic
     sudo snap install phpstorm --classic
     sudo snap install rider --classic
-}    
+}
 
 # Handles applications that can run through the command line.
 function snap_applications() {
@@ -445,6 +442,7 @@ function snap_applications() {
         sudo snap install spotify
         sudo snap install plex-desktop
         sudo snap install ferdium
+        sudo snap install discord
 
     elif (( IS_MEDIA_SERVER == 1 ));
     then
@@ -460,16 +458,8 @@ function install_and_configure_plex() {
     echo_wait "Now installing Plex."
     cd_or_exit "$TEMP_DOWNLOAD_PATH"
 
-    wget "https://downloads.plex.tv/plex-media-server-new/${PLEX_VERSION_NUMBER}/debian/plexmediaserver_${PLEX_VERSION_NUMBER}_amd64.deb"
+    curl -LsSf https://repo.plex.tv/scripts/setupRepo.sh | sudo bash
 
-    if [[ ! -f "plexmediaserver_${PLEX_VERSION_NUMBER}_amd64.deb" ]]
-    then
-        echo "Error: Could not download plexmediaserver_${PLEX_VERSION_NUMBER}_amd64.deb. Aborting."
-        return        
-    fi
-
-    sudo dpkg -i "plexmediaserver_${PLEX_VERSION_NUMBER}_amd64.deb"
-    
     echo_wait "Now Configuring Plex:"
     sudo usermod -a -G "$USERNAME" "$PLEX_USERNAME"
     sudo chown "$USER:$USERNAME" "/media/$USER"
@@ -487,10 +477,10 @@ function install_and_configure_plex() {
 function install_fcron() {
     cd_or_exit "$TEMP_DOWNLOAD_PATH"
     # cd "$TEMP_DOWNLOAD_PATH"
-    
+
     echo_wait "Installing fcron dependencies first..."
     sudo apt install git autoconf mailutils docbook docbook-xsl docbook-xml docbook-utils manpages-dev -y
-    
+
     # Download the tarball
     wget "http://fcron.free.fr/archives/fcron-${FCRON_VERSION}.src.tar.gz"
     tar -xvf "fcron-${FCRON_VERSION}.src.tar.gz"
@@ -500,7 +490,7 @@ function install_fcron() {
 
     # Now enable it:
     sudo systemctl enable fcron
-    
+
     # Now return:
     cd_or_exit "$CURRENT_PATH"
     # cd "$CURRENT_PATH"
@@ -508,20 +498,20 @@ function install_fcron() {
 
 function increase_swap_size() {
     SWAP_SIZE="8"
-    
+
     echo_wait "Temporarily disabling the swap..."
     sudo swapoff -a
-    
+
     echo_wait "Increasing the size of /swapfile to ${SWAP_SIZE}G."
     sudo fallocate -l "${SWAP_SIZE}G" /swapfile
     sudo chmod 600 /swapfile
-    
+
     echo_wait "Now creating the swap from /swapfile"
     sudo mkswap /swapfile
 
     # echo "Now adding /swapfile to /etc/fstab if it doesn't exist."
     # echo '/swapfile none swap sw 0 0' | sudo tee -a /etc/fstab
-           
+
     echo_wait "Now Re-enable the swap."
     sudo swapon -a
 }
@@ -534,19 +524,19 @@ function desktop_installation() {
     echo "Now performing a desktop re-installation."
     sleep 1
     update_first
-    
+
     graphic_drivers
     essential_programs
     brave_browser
-    
+
     appearance_tools
     programming_tools
     multimedia_tools
-   
+
     vidya
     snap_ides
     snap_applications
-    
+
     install_manual_debian_files
     install_fcron
     increase_swap_size
@@ -556,11 +546,11 @@ function media_server_installation() {
     echo "Now performing a media server re-installation."
     sleep 1
     update_first
-    
+
     graphic_drivers
     essential_programs
     appearance_tools
-    
+
     multimedia_tools
 
     vidya
@@ -614,10 +604,10 @@ function swap_caps_lock_and_ctrl() {
         if [[ -z "$grep_check" ]];
         then
             sudo echo 'XKBOPTIONS="ctrl:swapcaps"'| sudo tee --append "/etc/default/keyboard"
-        else       
+        else
             # Otherwise, replace an empty XKBOPTIONS line with the ctrl:swapcaps option.
             sudo sed -i 's/XKBOPTIONS=\"\"/XKBOPTIONS=\"ctrl:swapcaps\"/g' /etc/default/keyboard
-        fi        
+        fi
     else
         echo "Hmm... /etc/default/keyboard doesn't seem to exist on your system."
         echo "You may either create the file yourself and add XKBOPTIONS=\"ctrl:swapcaps\" to it"
@@ -628,7 +618,7 @@ function swap_caps_lock_and_ctrl() {
 }
 
 function display_main_menu() {
-    echo "The Current Time is $(date +'%m/%d/%Y %H:%M')"    
+    echo "The Current Time is $(date +'%m/%d/%Y %H:%M')"
     print_dashed_line
     echo "Ubuntu Reinstallation (Version $VERSION_NUMBER)"
     print_dashed_line
@@ -638,12 +628,12 @@ function display_main_menu() {
     echo "c) Minimal Headless Server Installation"
     echo "q) Quit"
     print_dashed_line
-    
+
     read -rp "Please enter a option: " -n1 user_input
 
     # Use regular expression to detect invalid input
     re="^[a-cA-CqQ]"
-    
+
     while ! [[ $user_input =~ $re ]];
     do
         echo ""
@@ -671,7 +661,7 @@ function display_main_menu() {
         echo "Exiting..."
         exit
     fi
-    
+
     swap_caps_lock_and_ctrl
 }
 
