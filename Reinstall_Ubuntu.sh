@@ -131,7 +131,7 @@ function essential_programs() {
 function setup_kvm() {
     # First, install the requirements:
 
-    sudo apt install qemu-system qemu-kvm libvirt-daemon-system libvirt-clients bridge-utils virtinst virt-manager -y
+    sudo apt install qemu-system-x86 libvirt-daemon-system libvirt-clients bridge-utils virtinst virt-manager -y
 
     # Next, set up any additional permissions here:
     sudo systemctl enable libvirtd
