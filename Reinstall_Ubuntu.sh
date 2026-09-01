@@ -19,7 +19,7 @@
 # ------------------------------------------------------------------------------
 # Global Variables
 # ------------------------------------------------------------------------------
-VERSION_NUMBER="2026-08-29"
+VERSION_NUMBER="2026-08-31"
 DASH_LINE_LENGTH=80
 CURRENT_PATH=$(pwd)
 USERNAME="$USER"
@@ -115,8 +115,7 @@ function essential_programs() {
         sudo apt install keepassxc -y
         sudo apt install libreoffice -y
         sudo apt install hunspell-en-us hunspell-es -y
-
-
+        sudo apt install syncthing -y
         sudo apt install baobab eog gnome-system-monitor evince -y
         sudo apt install espeak -y
         setup_kvm
@@ -247,6 +246,7 @@ function install_python() {
     python3 -m pip install ipdb --break-system-packages
     python3 -m pip install tldr --break-system-packages
     pipx install yt-dlp; pipx upgrade yt-dlp
+    pipx install b2 --suffix=-backup
 }
 
 function install_rust() {
