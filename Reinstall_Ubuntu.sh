@@ -41,6 +41,7 @@ INTENDED_UBUNTU_VERSION="26.04"
 JAVA_VERSION_LIST=('8' '21' '25')
 PLEX_USERNAME="plex"
 FCRON_VERSION="3.4.1"
+SWAP_SIZE="8"
 
 # ------------------------------------------------------------------------------
 # Essential Helper Functions
@@ -151,14 +152,7 @@ function appearance_tools() {
 # ------------------------------------------------------------------------------
 function brave_browser() {
     echo_wait "Now installing Brave Browser."
-    sudo apt install apt-transport-https curl -y
-
-    curl -s https://brave-browser-apt-release.s3.brave.com/brave-core.asc | sudo apt-key --keyring /etc/apt/trusted.gpg.d/brave-browser-release.gpg add -
-
-    echo "deb [arch=amd64] https://brave-browser-apt-release.s3.brave.com/ stable main" | sudo tee /etc/apt/sources.list.d/brave-browser-release.list
-
-    sudo apt update
-    sudo apt install brave-browser -y
+    sudo snap install brave
 }
 
 # ------------------------------------------------------------------------------
@@ -172,6 +166,7 @@ function install_text_editors() {
 
 function install_emacs() {
     sudo apt install dict dict-freedict-eng-spa dict-jargon dict-gcide dict-freedict-spa-eng -y
+    sudo apt install aspell-es -y
     sudo apt install libimage-exiftool-perl -y
     sudo apt install emacs emacs-common-non-dfsg -y
     cd_or_exit "$CURRENT_PATH"
@@ -192,7 +187,6 @@ function install_java() {
 
 function install_javascript() {
     sudo snap install node --channel=24/stable --classic
-    sudo snap install deno
 }
 
 function install_cpp {
@@ -205,6 +199,7 @@ function install_cpp {
     # NOTE: If this start happening out of nowhere, check if the latest libstdc++ has been installed.
     sudo apt install "libstdc++-${GCC_VERSION}-dev" -y
     sudo apt install "clang-${CLANG_VERSION}" -y
+    sudo apt install "clangd-${CLANG_VERSION}" -y
     sudo apt install valgrind -y
 
     sudo apt install libpqxx-dev libmysql++-dev -y
@@ -245,7 +240,8 @@ function install_python() {
     python3 -m pip install numpy --break-system-packages
     python3 -m pip install ipdb --break-system-packages
     python3 -m pip install tldr --break-system-packages
-    pipx install yt-dlp; pipx upgrade yt-dlp
+    pipx install yt-dlp
+    pipx upgrade yt-dlp
     pipx install b2 --suffix=-backup
 }
 
@@ -497,8 +493,6 @@ function install_fcron() {
 }
 
 function increase_swap_size() {
-    SWAP_SIZE="8"
-
     echo_wait "Temporarily disabling the swap..."
     sudo swapoff -a
 
