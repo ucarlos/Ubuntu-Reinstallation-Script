@@ -165,7 +165,7 @@ function install_text_editors() {
 }
 
 function install_emacs() {
-    sudo apt install dict dict-freedict-eng-spa dict-jargon dict-gcide dict-freedict-spa-eng -y
+    sudo apt install dict dict-freedict-eng-spa dict-jargon dict-gcide dict-freedict-spa-eng opus-tools flactag flac -y
     sudo apt install aspell-es -y
     sudo apt install libimage-exiftool-perl -y
     sudo apt install emacs emacs-common-non-dfsg -y
